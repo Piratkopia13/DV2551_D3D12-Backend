@@ -212,6 +212,9 @@
     <ClCompile Include="src\Transform.cpp" />
     <ClCompile Include="src\VertexBuffer.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\DX12\todo.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
