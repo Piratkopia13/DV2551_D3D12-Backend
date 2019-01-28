@@ -14,16 +14,6 @@
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
-template<class Interface>
-inline void SafeRelease(
-	Interface **ppInterfaceToRelease) {
-	if (*ppInterfaceToRelease != NULL) {
-		(*ppInterfaceToRelease)->Release();
-
-		(*ppInterfaceToRelease) = NULL;
-	}
-}
-
 class DX12Renderer : public Renderer {
 public:
 	DX12Renderer();
@@ -55,6 +45,7 @@ public:
 	void present();
 
 	ID3D12Device4* getDevice();
+	ID3D12GraphicsCommandList3* getCommandsList();
 	
 
 protected:

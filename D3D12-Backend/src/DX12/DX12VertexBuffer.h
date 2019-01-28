@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "../VertexBuffer.h"
 #include "DX12.h"
 
@@ -11,21 +13,29 @@ private:
 	//cheap ref counting
 	unsigned int refs = 0;
 
-	wComPtr<D3D12_VERTEX_BUFFER_VIEW> m_vbView;
+	wComPtr<ID3D12Resource> m_vertexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW m_vbView;
 
-	size_t m_size;
+	// uploadBuffers to be released
+	std::vector<ID3D12Resource*> m_uploadBuffers;
+
+	size_t m_byteSize;
+	size_t m_vertexSize;
+
+	UINT m_lastBoundVBSlot;
 
 	DX12Renderer* m_renderer;
 
 public:
 	enum DATA_USAGE { STATIC=0, DYNAMIC=1, DONTCARE=2 };
 
-	DX12VertexBuffer(size_t size, DX12Renderer* device);
+	DX12VertexBuffer(size_t byteSize, size_t vertexSize, DX12Renderer* device);
 	virtual ~DX12VertexBuffer();
 	virtual void setData(const void* data, size_t size, size_t offset);
 	virtual void bind(size_t offset, size_t size, unsigned int location);
 	virtual void unbind();
 	virtual size_t getSize();
 
+	void releaseBufferedObjects();
 };
 

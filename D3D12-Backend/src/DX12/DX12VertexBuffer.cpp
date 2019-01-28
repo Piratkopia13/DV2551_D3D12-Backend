@@ -3,60 +3,59 @@
 #include <cassert>
 
 #include "DX12Renderer.h"
+#include "D3DUtils.h"
 
-DX12VertexBuffer::DX12VertexBuffer(size_t size, DX12Renderer* renderer) {
-	/*// Heap properties of the resource
-	D3D12_HEAP_PROPERTIES hp = {};
-	// Default heap, no CPU access, usually populated through upload heaps
-	hp.Type = D3D12_HEAP_TYPE_DEFAULT;
-	hp.CreationNodeMask = 1;
-	hp.VisibleNodeMask = 1;
-
-	// Resource description
-	D3D12_RESOURCE_DESC rd = {};
-	// Declare that the resource is used as a buffer
-	rd.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	rd.Width = size;
-	rd.Height = 1;
-	rd.DepthOrArraySize = 1;
-	rd.MipLevels = 1;
-	rd.SampleDesc.Count = 1;
-	rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	device->CreateCommittedResource(
-		&hp, 
-		D3D12_HEAP_FLAG_NONE, 
-		&rd,
-		D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
-		nullptr,
-		IID_PPV_ARGS(&m_vertexBuffer));
-	
-	m_vertexBuffer->SetName(L"vb heap");*/
-
+DX12VertexBuffer::DX12VertexBuffer(size_t byteSize, size_t vertexSize, DX12Renderer* renderer) {
 	m_renderer = renderer;
-	m_size = size;
+	m_byteSize = byteSize;
+
+	ThrowIfFailed(m_renderer->getDevice()->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(m_vertexBuffer.GetAddressOf())));
+
+	m_lastBoundVBSlot = -1;
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {
-
+	releaseBufferedObjects();
+	m_renderer = nullptr;
 }
 
 void DX12VertexBuffer::setData(const void * data, size_t size, size_t offset) {
-	/*assert(size + offset <= m_size);
+	assert(size + offset <= m_byteSize);
 
-	void* dataBegin = nullptr;
-	D3D12_RANGE range = { 0, 0 }; // No intention of reading this resource on the CPU.
-	m_vertexBuffer->Map(0, &range, &dataBegin);
-	memcpy_s(dataBegin, size, data, size);
-	m_vertexBuffer->Unmap(0, nullptr);*/
+	ID3D12Resource* uploadBuffer = nullptr;
+	D3DUtils::UpdateDefaultBufferData(m_renderer->getDevice(), m_renderer->getCommandsList(),
+		data, size, offset, m_vertexBuffer.Get(), uploadBuffer);
+	// To be released, let renderer handle later
+	m_uploadBuffers.emplace_back(uploadBuffer);
 }
 
 void DX12VertexBuffer::bind(size_t offset, size_t size, unsigned int location) {
+	D3D12_VERTEX_BUFFER_VIEW vbView = {};
+	m_vbView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress() + offset;
+	m_vbView.SizeInBytes = size;
+	m_vbView.StrideInBytes = m_vertexSize;
+	m_lastBoundVBSlot = location;
+	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
+	m_renderer->getCommandsList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, &m_vbView);
 }
 
 void DX12VertexBuffer::unbind() {
+	m_renderer->getCommandsList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, nullptr);
 }
 
 size_t DX12VertexBuffer::getSize() {
-	return size_t(0);
+	return m_byteSize;
+}
+
+void DX12VertexBuffer::releaseBufferedObjects() {
+	for (auto uBuffer : m_uploadBuffers) {
+		SafeRelease(&uBuffer);
+	}
+	m_uploadBuffers.clear();
 }
