@@ -36,22 +36,22 @@ double gLastDelta = 0.0;
 
 void updateDelta()
 {
-	#define WINDOW_SIZE 10
-	static Uint64 start = 0;
-	static Uint64 last = 0;
-	static double avg[WINDOW_SIZE] = { 0.0 };
-	static double lastSum = 10.0;
-	static int loop = 0;
+	//#define WINDOW_SIZE 10
+	//static Uint64 start = 0;
+	//static Uint64 last = 0;
+	//static double avg[WINDOW_SIZE] = { 0.0 };
+	//static double lastSum = 10.0;
+	//static int loop = 0;
 
-	last = start;
-	start = SDL_GetPerformanceCounter();
-	double deltaTime = (double)((start - last) * 1000.0 / SDL_GetPerformanceFrequency());
-	// moving average window of WINDOWS_SIZE
-	lastSum -= avg[loop];
-	lastSum += deltaTime;
-	avg[loop] = deltaTime;
-	loop = (loop + 1) % WINDOW_SIZE;
-	gLastDelta = (lastSum / WINDOW_SIZE);
+	//last = start;
+	//start = SDL_GetPerformanceCounter();
+	//double deltaTime = (double)((start - last) * 1000.0 / SDL_GetPerformanceFrequency());
+	//// moving average window of WINDOWS_SIZE
+	//lastSum -= avg[loop];
+	//lastSum += deltaTime;
+	//avg[loop] = deltaTime;
+	//loop = (loop + 1) % WINDOW_SIZE;
+	//gLastDelta = (lastSum / WINDOW_SIZE);
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
