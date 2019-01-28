@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Renderer.h"
+#include "DX12.h"
 #include "Win32Window.h"
 #include <memory>
 #include <wrl.h>
@@ -12,12 +13,6 @@
 #pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
-
-#define ThrowIfFailed(hr) { \
-	if (FAILED(hr)) { \
-		throw std::exception(); \
-	} \
-}
 
 template<class Interface>
 inline void SafeRelease(
