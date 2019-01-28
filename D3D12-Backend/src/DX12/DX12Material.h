@@ -66,7 +66,7 @@ public:
 	D3D12_INPUT_LAYOUT_DESC getInputLayoutDesc();
 
 private:
-	int compileShader(ShaderType type, std::string& errString);
+	int compileShader(ShaderType type);
 	std::string expandShaderText(std::string& shaderText, ShaderType type);
 
 private:
