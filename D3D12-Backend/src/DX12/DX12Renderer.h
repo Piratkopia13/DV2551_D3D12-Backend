@@ -57,6 +57,9 @@ public:
 	void frame();
 	void present();
 
+	ID3D12Device4* getDevice();
+	
+
 protected:
 	
 
@@ -80,6 +83,14 @@ private:
 	D3D12_VIEWPORT m_viewport;
 	D3D12_RECT m_scissorRect;
 	HANDLE m_eventHandle;
+
+	// Upload buffer stuff
+	// Currently only one large
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_uploadBuffer;
+	size_t m_uploadHeapSize;
+	UINT8* m_pDataBegin = nullptr; // Starting position of upload buffer
+	UINT8* m_pDataCur = nullptr; // Current position of upload buffer
+	UINT8* m_pDataEnd = nullptr; // End position of upload buffer
 
 	std::vector<Mesh*> drawList;
 	std::unordered_map<Technique*, std::vector<Mesh*>> drawList2;
