@@ -93,6 +93,9 @@
     <ClInclude Include="src\DX12\Win32Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\DX12\DX12Texture2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\DX12\DX12VertexBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -100,6 +103,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\DX12\DX12Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DX12\D3DUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DX12\d3dx12.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -182,10 +191,16 @@
     <ClCompile Include="src\DX12\Win32Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\DX12\DX12Texture2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\DX12\DX12VertexBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DX12\DX12Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DX12\D3DUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
