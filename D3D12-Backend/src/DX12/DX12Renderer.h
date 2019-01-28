@@ -44,6 +44,8 @@ public:
 	ID3D12Device4* getDevice();
 	ID3D12CommandQueue* getCmdQueue();
 	ID3D12GraphicsCommandList3* getCmdList();
+	ID3D12RootSignature* getRootSignature();
+	ID3D12CommandAllocator* getCmdAllocator();
 
 	int initialize(unsigned int width = 640, unsigned int height = 480);
 	void setWinTitle(const char* title);

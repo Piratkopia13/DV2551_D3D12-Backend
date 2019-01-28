@@ -14,11 +14,10 @@
 //#include "ConstantBufferGL.h"
 #include "DX12Texture2D.h"
 
-DX12Renderer::DX12Renderer() 
+DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
 	, m_fenceValue(0)
-	, m_eventHandle(nullptr)
-{
+	, m_eventHandle(nullptr) {
 }
 
 DX12Renderer::~DX12Renderer() {
@@ -58,19 +57,24 @@ std::string DX12Renderer::getShaderExtension() {
 	return std::string(".hlsl");
 }
 
-ID3D12Device4 * DX12Renderer::getDevice()
-{
+ID3D12Device4 * DX12Renderer::getDevice() {
 	return m_device.Get();
 }
 
-ID3D12CommandQueue * DX12Renderer::getCmdQueue()
-{
+ID3D12CommandQueue * DX12Renderer::getCmdQueue() {
 	return m_commandQueue.Get();
 }
 
-ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList()
-{
+ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList() {
 	return m_commandList.Get();
+}
+
+ID3D12RootSignature * DX12Renderer::getRootSignature() {
+	return m_rootSignature.Get();
+}
+
+ID3D12CommandAllocator * DX12Renderer::getCmdAllocator() {
+	return m_commandAllocator.Get();
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
@@ -193,7 +197,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	scDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
-	if (SUCCEEDED(factory->CreateSwapChainForHwnd(m_commandQueue.Get(), *m_window->getHwnd(), &scDesc, nullptr,	nullptr, &swapChain1))) {
+	if (SUCCEEDED(factory->CreateSwapChainForHwnd(m_commandQueue.Get(), *m_window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
 		if (SUCCEEDED(swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
 			// WHY THO?
 			m_swapChain->Release();
@@ -243,7 +247,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	m_scissorRect.bottom = (long)height;
 
 	// 8. Create root signature
-	
+
 	//define descriptor range(s)
 	D3D12_DESCRIPTOR_RANGE dtRanges[1];
 	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
@@ -369,6 +373,6 @@ void DX12Renderer::clearBuffer(unsigned int flag) {
 //void DX12Renderer::setRenderTarget(RenderTarget* rt) {};
 
 void DX12Renderer::setRenderState(RenderState* ps) {
-	//// naive implementation
-	//ps->set();
+	// naive implementation
+	ps->set();
 };
