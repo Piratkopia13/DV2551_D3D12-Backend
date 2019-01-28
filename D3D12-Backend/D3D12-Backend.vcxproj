@@ -158,6 +158,8 @@
   <ItemGroup>
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ConstantBuffer.h" />
+    <ClInclude Include="src\DX12\D3DUtils.h" />
+    <ClInclude Include="src\DX12\d3dx12.h" />
     <ClInclude Include="src\DX12\DX12.h" />
     <ClInclude Include="src\DX12\DX12Renderer.h" />
     <ClInclude Include="src\DX12\DX12VertexBuffer.h" />
@@ -189,6 +191,7 @@
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\ConstantBuffer.cpp" />
+    <ClCompile Include="src\DX12\D3DUtils.cpp" />
     <ClCompile Include="src\DX12\DX12Renderer.cpp" />
     <ClCompile Include="src\DX12\DX12VertexBuffer.cpp" />
     <ClCompile Include="src\DX12\DX12Material.cpp" />

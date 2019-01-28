@@ -266,6 +266,32 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 		// 10. Create pipeline state
 
 		// 12. Create vertex buffer resources
+		// Heap properties of the resource
+		D3D12_HEAP_PROPERTIES hp	= {};
+		hp.Type						= D3D12_HEAP_TYPE_UPLOAD;
+		hp.CreationNodeMask			= 1;
+		hp.VisibleNodeMask			= 1;
+
+		// Resource description
+		D3D12_RESOURCE_DESC rd	= {};
+		// Declare that the resource is used as a buffer
+		rd.Dimension			= D3D12_RESOURCE_DIMENSION_BUFFER;
+		rd.Width				= m_uploadHeapSize;
+		rd.Height				= 1;
+		rd.DepthOrArraySize		= 1;
+		rd.MipLevels			= 1;
+		rd.SampleDesc.Count		= 1;
+		rd.Layout				= D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		
+		// Create a implicit heap for uploading resources
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&hp,
+			D3D12_HEAP_FLAG_NONE,
+			&rd,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_uploadBuffer)));
+
 
 		// 13. Draaaaaaw
 	}
@@ -335,6 +361,11 @@ void DX12Renderer::frame() {
 
 void DX12Renderer::present() {
 	//SDL_GL_SwapWindow(window);
+}
+
+ID3D12Device4 * DX12Renderer::getDevice()
+{
+	return m_device.Get();
 }
 
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {
