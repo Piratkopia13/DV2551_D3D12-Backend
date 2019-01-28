@@ -1,5 +1,10 @@
 #pragma once
 #include "../Texture2D.h"
+#include "DX12.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+
 class DX12Texture2D : public Texture2D
 {
 public:
