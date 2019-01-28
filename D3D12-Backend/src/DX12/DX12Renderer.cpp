@@ -4,21 +4,21 @@
 
 //#include <GL/glew.h>
 
-//#include "MaterialGL.h"
+#include "DX12Material.h"
 //#include "MeshGL.h"
 #include "../Mesh.h"
 #include "../Technique.h"
-//#include "ResourceBindingGL.h"
-//#include "RenderStateGL.h"
+#include "DX12RenderState.h"
+#include "DX12Technique.h"
 //#include "VertexBufferGL.h"
 //#include "ConstantBufferGL.h"
-//#include "Texture2DGL.h"
+#include "DX12Texture2D.h"
 
-DX12Renderer::DX12Renderer() 
+DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
 	, m_fenceValue(0)
 	, m_eventHandle(nullptr)
-{
+	, m_globalWireframeMode(false) {
 }
 
 DX12Renderer::~DX12Renderer() {
@@ -36,7 +36,7 @@ Mesh* DX12Renderer::makeMesh() {
 }
 
 Texture2D* DX12Renderer::makeTexture2D() {
-	//return (Texture2D*)new Texture2DGL();
+	return (Texture2D*)new DX12Texture2D(this);
 	return nullptr;
 }
 
@@ -58,26 +58,45 @@ std::string DX12Renderer::getShaderExtension() {
 	return std::string(".hlsl");
 }
 
+ID3D12Device4 * DX12Renderer::getDevice() {
+	return m_device.Get();
+}
+
+ID3D12CommandQueue * DX12Renderer::getCmdQueue() {
+	return m_commandQueue.Get();
+}
+
+ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList() {
+	return m_commandList.Get();
+}
+
+ID3D12RootSignature * DX12Renderer::getRootSignature() {
+	return m_rootSignature.Get();
+}
+
+ID3D12CommandAllocator * DX12Renderer::getCmdAllocator() {
+	return m_commandAllocator.Get();
+}
+
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
 	//return new VertexBufferGL(size, usage);
 	return nullptr;
 };
 
 Material* DX12Renderer::makeMaterial(const std::string& name) {
-	//return new MaterialGL(name);
-	return nullptr;
+	return new DX12Material(name);
 }
 
 Technique* DX12Renderer::makeTechnique(Material* m, RenderState* r) {
-	Technique* t = new Technique(m, r);
+	DX12Technique* t = new DX12Technique((DX12Material*)m, (DX12RenderState*)r, this);
 	return t;
 }
 
 RenderState* DX12Renderer::makeRenderState() {
-	/*RenderStateGL* newRS = new RenderStateGL();
-	newRS->setGlobalWireFrame(&this->globalWireframeMode);
+	DX12RenderState* newRS = new DX12RenderState();
+	newRS->setGlobalWireFrame(&m_globalWireframeMode);
 	newRS->setWireFrame(false);
-	return (RenderState*)newRS;*/
+	return (RenderState*)newRS;
 	return nullptr;
 }
 
@@ -179,7 +198,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	scDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
-	if (SUCCEEDED(factory->CreateSwapChainForHwnd(m_commandQueue.Get(), *m_window->getHwnd(), &scDesc, nullptr,	nullptr, &swapChain1))) {
+	if (SUCCEEDED(factory->CreateSwapChainForHwnd(m_commandQueue.Get(), *m_window->getHwnd(), &scDesc, nullptr, nullptr, &swapChain1))) {
 		if (SUCCEEDED(swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
 			// WHY THO?
 			m_swapChain->Release();
@@ -229,7 +248,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	m_scissorRect.bottom = (long)height;
 
 	// 8. Create root signature
-	
+
 	//define descriptor range(s)
 	D3D12_DESCRIPTOR_RANGE dtRanges[1];
 	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
@@ -338,10 +357,6 @@ void DX12Renderer::present() {
 	//SDL_GL_SwapWindow(window);
 }
 
-ID3D12Device4 * DX12Renderer::getDevice()
-{
-	return m_device.Get();
-}
 
 ID3D12GraphicsCommandList3 * DX12Renderer::getCommandsList()
 {
@@ -364,6 +379,6 @@ void DX12Renderer::clearBuffer(unsigned int flag) {
 //void DX12Renderer::setRenderTarget(RenderTarget* rt) {};
 
 void DX12Renderer::setRenderState(RenderState* ps) {
-	//// naive implementation
-	//ps->set();
+	// naive implementation
+	ps->set();
 };

@@ -12,23 +12,10 @@
 
 typedef unsigned int uint;
 
-// recursive function to split a string by a delimiter
-// easier to read than all that crap using STL...
-//void split(const char* text, std::vector<std::string>* const temp, const char delim = ' ') {
-//
-//	unsigned int delimPos = strcspn(text, (const char*) &delim);
-//	if (delimPos == strlen(text)) {
-//		temp->push_back(std::string(text));
-//	} else {
-//		temp->push_back(std::string(text, delimPos));
-//		split(text + delimPos, temp, delim);
-//	}
-//}
-
 /*
 	vtx_shader is the basic shader text coming from the .vs file.
 	strings will be added to the shader in this order:
-	// - version of GLSL
+	// - version of HLSL
 	// - defines from map
 	// - existing shader code
 */
@@ -49,6 +36,8 @@ DX12Material::DX12Material(const std::string& name) {
 };
 
 DX12Material::~DX12Material() {
+
+	delete[] m_inputElementDesc;
 	// delete attached constant buffers
 	//for (auto buffer : constantBuffers) {
 	//	if (buffer.second != nullptr) {
@@ -85,15 +74,14 @@ void DX12Material::updateConstantBuffer(const void* data, size_t size, unsigned 
 }
 
 void DX12Material::removeShader(ShaderType type) {
-	//GLuint shader = shaderObjects[(GLuint)type];
-	//// check if name exists (if it doesn't there should not be a shader here.
-	//if (shaderFileNames.find(type) == shaderFileNames.end()) {
-	//	assert(shader == 0);
-	//	return;
-	//} else if (shader != 0 && program != 0) {
-	//	glDetachShader(program, shader);
-	//	glDeleteShader(shader);
-	//};
+	auto shader = m_shaderBlobs[(int)type];
+	// check if name exists (if it doesn't there should not be a shader here.
+	if (shaderFileNames.find(type) == shaderFileNames.end()) {
+		assert(shader == 0);
+		return;
+	} else if (shader != 0) {
+		shader->Release();
+	};
 };
 
 ID3DBlob* DX12Material::getShaderBlob(Material::ShaderType type) {
@@ -104,7 +92,7 @@ D3D12_INPUT_LAYOUT_DESC DX12Material::getInputLayoutDesc() {
 	return m_inputLayoutDesc;
 }
 
-int DX12Material::compileShader(ShaderType type, std::string& errString) {
+int DX12Material::compileShader(ShaderType type) {
 
 	// open the file and read it to a string "shaderText"
 	std::ifstream shaderFile(shaderFileNames[type]);
@@ -113,7 +101,8 @@ int DX12Material::compileShader(ShaderType type, std::string& errString) {
 		shaderText = std::string((std::istreambuf_iterator<char>(shaderFile)), std::istreambuf_iterator<char>());
 		shaderFile.close();
 	} else {
-		errString = "Cannot find file: " + shaderFileNames[type];
+		std::string err = "Cannot find file: " + shaderFileNames[type] + "\n";
+		OutputDebugStringA(err.c_str());
 		return -1;
 	}
 
@@ -122,7 +111,9 @@ int DX12Material::compileShader(ShaderType type, std::string& errString) {
 	std::string shaderSource = expandShaderText(shaderText, type);
 
 	// debug
-	//	DBOUTW(shaderSource.c_str());
+	//OutputDebugStringA("\nShader source:\n");
+	//OutputDebugStringA(shaderSource.c_str());
+	//OutputDebugStringA("\n");
 
 	ID3DBlob* shaderBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
@@ -135,18 +126,30 @@ int DX12Material::compileShader(ShaderType type, std::string& errString) {
 	switch (type) {
 	case Material::ShaderType::VS:
 		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		break;
 	case Material::ShaderType::PS:
 		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "ps_5_0", flags, 0, &shaderBlob, &errorBlob);
+		break;
 	case Material::ShaderType::GS:
 		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "gs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		break;
 	case Material::ShaderType::CS:
 		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "cs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		break;
 	}
 
 	if (FAILED(hr)) {
 		// Print shader compilation error
 		if (errorBlob) {
-			OutputDebugStringA((char*) errorBlob->GetBufferPointer());
+			char* msg = (char*)(errorBlob->GetBufferPointer());
+			std::stringstream ss;
+			ss << "Failed to compile shader (" << shaderFileNames[type] << ")\n";
+			for (size_t i = 0; i < errorBlob->GetBufferSize(); i++) {
+				ss << msg[i];
+			}
+			OutputDebugStringA(ss.str().c_str());
+
+			OutputDebugStringA("\n");
 			errorBlob->Release();
 		}
 		if (shaderBlob)
@@ -157,15 +160,18 @@ int DX12Material::compileShader(ShaderType type, std::string& errString) {
 	m_shaderBlobs[(int)type] = shaderBlob;
 
 	////// Input Layout //////
-	D3D12_INPUT_ELEMENT_DESC inputElementDesc[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR"	, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	const unsigned int NUM_ELEMS = 4;
+	m_inputElementDesc = new D3D12_INPUT_ELEMENT_DESC[NUM_ELEMS]{
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR"	, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
-	m_inputLayoutDesc.pInputElementDescs = inputElementDesc;
-	m_inputLayoutDesc.NumElements = ARRAYSIZE(inputElementDesc);
+	m_inputLayoutDesc.pInputElementDescs = m_inputElementDesc;
+	m_inputLayoutDesc.NumElements = NUM_ELEMS;
 
-	return 0;
+	return hr;
 }
 
 int DX12Material::compileMaterial(std::string& errString) {
@@ -174,41 +180,23 @@ int DX12Material::compileMaterial(std::string& errString) {
 	removeShader(ShaderType::PS);
 
 	// compile shaders
-	std::string err;
-	if (compileShader(ShaderType::VS, err) < 0) {
-		errString = err;
-		exit(-1);
-	};
-	if (compileShader(ShaderType::PS, err) < 0) {
-		errString = err;
-		exit(-1);
-	};
+	compileShader(ShaderType::VS);
+	compileShader(ShaderType::PS);
 
-	//// try to link the program
-	//// link shader program (connect vs and ps)
-	//if (program != 0)
-	//	glDeleteProgram(program);
-
-	//program = glCreateProgram();
-	//glAttachShader(program, shaderObjects[(GLuint)ShaderType::VS]);
-	//glAttachShader(program, shaderObjects[(GLuint)ShaderType::PS]);
-	//glLinkProgram(program);
-
-	//std::string err2;
-	//INFO_OUT(program, Program);
-	//COMPILE_LOG(program, Program, err2);
-	//isValid = true;
+	isValid = true;
 	return 0;
 };
 
 int DX12Material::enable() {
-	/*if (program == 0 || isValid == false)
+	if (!isValid)
 		return -1;
-	glUseProgram(program);
 
-	for (auto cb : constantBuffers) {
+	//glUseProgram(program);
+
+	/*for (auto cb : constantBuffers) {
 		cb.second->bind(this);
 	}*/
+
 	return 0;
 };
 

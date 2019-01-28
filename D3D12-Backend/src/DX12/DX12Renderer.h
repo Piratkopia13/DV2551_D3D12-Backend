@@ -31,6 +31,11 @@ public:
 	Sampler2D* makeSampler2D();
 	std::string getShaderPath();
 	std::string getShaderExtension();
+	ID3D12Device4* getDevice();
+	ID3D12CommandQueue* getCmdQueue();
+	ID3D12GraphicsCommandList3* getCmdList();
+	ID3D12RootSignature* getRootSignature();
+	ID3D12CommandAllocator* getCmdAllocator();
 
 	int initialize(unsigned int width = 640, unsigned int height = 480);
 	void setWinTitle(const char* title);
@@ -53,6 +58,7 @@ protected:
 
 private:
 	std::unique_ptr<Win32Window> m_window;
+	bool m_globalWireframeMode;
 	
 	static const UINT NUM_SWAP_BUFFERS = 2;
 

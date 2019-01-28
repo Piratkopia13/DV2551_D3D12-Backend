@@ -66,7 +66,7 @@ public:
 	D3D12_INPUT_LAYOUT_DESC getInputLayoutDesc();
 
 private:
-	int compileShader(ShaderType type, std::string& errString);
+	int compileShader(ShaderType type);
 	std::string expandShaderText(std::string& shaderText, ShaderType type);
 
 private:
@@ -75,6 +75,8 @@ private:
 	std::string m_shaderNames[4];
 	// Compiled shader blobs
 	wComPtr<ID3DBlob> m_shaderBlobs[4];
+
+	D3D12_INPUT_ELEMENT_DESC* m_inputElementDesc;
 	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 
 };
