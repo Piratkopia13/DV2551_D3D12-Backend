@@ -3,8 +3,10 @@
 #include "../Renderer.h"
 #include "Win32Window.h"
 #include <memory>
-#include <d3d12.h>
 #include <wrl.h>
+#include <d3d12.h>
+#include <dxgi1_6.h> //Only used for initialization of the device and swap chain.
+#include <d3dcompiler.h>
 
 // Link necessary d3d12 libraries.
 #pragma comment(lib,"d3dcompiler.lib")
@@ -15,6 +17,16 @@
 	if (FAILED(hr)) { \
 		throw std::exception(); \
 	} \
+}
+
+template<class Interface>
+inline void SafeRelease(
+	Interface **ppInterfaceToRelease) {
+	if (*ppInterfaceToRelease != NULL) {
+		(*ppInterfaceToRelease)->Release();
+
+		(*ppInterfaceToRelease) = NULL;
+	}
 }
 
 class DX12Renderer : public Renderer {
@@ -53,15 +65,24 @@ protected:
 private:
 	std::unique_ptr<Win32Window> m_window;
 	
+	static const UINT NUM_SWAP_BUFFERS = 2;
 
 	// DX12 stuff
-	ID3D12Device* m_device;
+	ID3D12Device4* m_device;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator; // Allocator only grows, use multple (one for each thing)
-	Microsoft::WRL::ComPtr<ID3D12CommandList> m_commandList;
-	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList3> m_commandList;
+	Microsoft::WRL::ComPtr<ID3D12Fence1> m_fence;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 	UINT m_renderTargetDescriptorSize;
+
+	HANDLE m_eventHandle = nullptr;
+	UINT64 m_fenceValue = 0;
+	ID3D12Resource1* m_renderTargets[NUM_SWAP_BUFFERS] = {};
+	D3D12_VIEWPORT m_viewport = {};
+	D3D12_RECT m_scissorRect = {};
+	ID3D12RootSignature* m_rootSignature = nullptr;
 	
 
 	//SDL_Window* window;

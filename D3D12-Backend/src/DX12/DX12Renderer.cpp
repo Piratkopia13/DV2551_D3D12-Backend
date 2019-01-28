@@ -1,5 +1,7 @@
-#include <stdio.h>
 #include "DX12Renderer.h"
+
+#include <stdio.h>
+
 //#include <GL/glew.h>
 
 //#include "MaterialGL.h"
@@ -109,53 +111,157 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
 
 	// Initialize DirectX12
-	if (adapter) {
-		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
-		adapter->Release();
+	//dxgi1_6 is only needed for the initialization process using the adapter.
+	IDXGIFactory6*	factory = nullptr;
+	IDXGIAdapter1*	adapter = nullptr;
+	//First a factory is created to iterate through the adapters available.
+	CreateDXGIFactory(IID_PPV_ARGS(&factory));
+	for (UINT adapterIndex = 0;; ++adapterIndex) {
+		adapter = nullptr;
+		if (DXGI_ERROR_NOT_FOUND == factory->EnumAdapters1(adapterIndex, &adapter)) {
+			break; //No more adapters to enumerate.
+		}
+
+		// Check to see if the adapter supports Direct3D 12, but don't create the actual device yet.
+		if (SUCCEEDED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, __uuidof(ID3D12Device4), nullptr))) {
+			break;
+		}
+		//ThrowIfFailed(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, __uuidof(ID3D12Device5), nullptr));
+
+		SafeRelease(&adapter);
 	}
+	if (adapter) {
+		//Create the actual device.
+		ThrowIfFailed(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device)));
+		SafeRelease(&adapter);
+	} else {
+		// Create warp device if no adapter was found.
+		factory->EnumWarpAdapter(IID_PPV_ARGS(&adapter));
+		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
+	}
+
+
 
 	// 3. Create command queue/allocator/list
 	// At least one allocator/list per thread and one per 
 
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	//queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	//queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+
 	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+
 	// Create allocator
-	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandQueue)));
+	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 	// Create command list
-	//ThrowIfFailed(m_device->CreateCommandList(asd, dasd, IID_PPV_ARGS(&m_commandQueue)));
+	m_device->CreateCommandList(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		m_commandAllocator.Get(),
+		nullptr,
+		IID_PPV_ARGS(&m_commandList));
+
+	//Command lists are created in the recording state. Since there is nothing to
+	//record right now and the main loop expects it to be closed, we close it.
+	m_commandList->Close();
+
+	// 5. Create swap chain
+	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
+	scDesc.Width = 0;
+	scDesc.Height = 0;
+	scDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	scDesc.Stereo = FALSE;
+	scDesc.SampleDesc.Count = 1;
+	scDesc.SampleDesc.Quality = 0;
+	scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	scDesc.BufferCount = NUM_SWAP_BUFFERS;
+	scDesc.Scaling = DXGI_SCALING_NONE;
+	scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	scDesc.Flags = 0;
+	scDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+
+	IDXGISwapChain1* swapChain1 = nullptr;
+	if (SUCCEEDED(factory->CreateSwapChainForHwnd(m_commandQueue.Get(), *m_window->getHwnd(), &scDesc, nullptr,	nullptr, &swapChain1))) {
+		if (SUCCEEDED(swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain)))) {
+			// WHY THO?
+			m_swapChain->Release();
+		}
+	}
+
+	// No more factory using
+	SafeRelease(&factory);
 
 	// 4. Create fence
 	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
 	m_fenceValue = 1;
+	//Create an event handle to use for GPU synchronization.
 	m_eventHandle = CreateEvent(0, false, false, 0);
-
-
-	// 5. Create swap chain
-	//factory->CreateSwapChainForHwnd(m_commandQueue, wndHandle, &scDesc, nullptr, nullptr, reinterpret_cast<ID
 
 	// 6. Create render target descriptors
 
-	const UINT NUM_SWAP_BUFFERS = 2;
+	// Create descriptor heap for render target views
 	D3D12_DESCRIPTOR_HEAP_DESC dhd = {};
 	dhd.NumDescriptors = NUM_SWAP_BUFFERS;
 	dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&m_renderTargetsHeap)));
-	// Create resources for the render target
-	m_renderTargetDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+
+	//Create resources for the render targets.
+	m_renderTargetDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 
 	// One RTV for each frame
 	for (UINT n = 0; n < NUM_SWAP_BUFFERS; n++) {
-		// blah
-		hr = m_swapChain->GetBuffer(blah);
-		m_device->CreateRenderTargetView(blah);
+		ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
+		m_device->CreateRenderTargetView(m_renderTargets[n], nullptr, cdh);
+		cdh.ptr += m_renderTargetDescriptorSize;
 	}
 
+	// 7. Viewport and scissor rect
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
+	m_viewport.Width = (float)width;
+	m_viewport.Height = (float)height;
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+
+	m_scissorRect.left = (long)0;
+	m_scissorRect.right = (long)width;
+	m_scissorRect.top = (long)0;
+	m_scissorRect.bottom = (long)height;
+
 	// 8. Create root signature
-	// CANCER
+	
+	//define descriptor range(s)
+	D3D12_DESCRIPTOR_RANGE dtRanges[1];
+	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	dtRanges[0].NumDescriptors = 1; //only one CB in this example
+	dtRanges[0].BaseShaderRegister = 0; //register b0
+	dtRanges[0].RegisterSpace = 0; //register(b0,space0);
+	dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	//create a descriptor table
+	D3D12_ROOT_DESCRIPTOR_TABLE dt;
+	dt.NumDescriptorRanges = ARRAYSIZE(dtRanges);
+	dt.pDescriptorRanges = dtRanges;
+
+	//create root parameter
+	D3D12_ROOT_PARAMETER  rootParam[1];
+	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParam[0].DescriptorTable = dt;
+	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	D3D12_ROOT_SIGNATURE_DESC rsDesc;
+	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	rsDesc.NumParameters = ARRAYSIZE(rootParam);
+	rsDesc.pParameters = rootParam;
+	rsDesc.NumStaticSamplers = 0;
+	rsDesc.pStaticSamplers = nullptr;
+
+	ID3DBlob* sBlob;
+	ThrowIfFailed(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &sBlob, nullptr));
+	ThrowIfFailed(m_device->CreateRootSignature(0, sBlob->GetBufferPointer(), sBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+
 
 	// Other classes
 	{
@@ -166,63 +272,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 		// 13. Draaaaaaw
 	}
 
-
-
-
-#if	defined(DEBUG)	||	defined(_DEBUG)	//	Enable	the	D3D12	debug	layer. 
-	{		
-		ComPtr<ID3D12Debug>	debugController;
-		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController->EnableDebugLayer();
-	} 
-#endif
-
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mdxgiFactory		//	Try	to	create	hardware	device. HRESULT	hardwareResult	=	D3D12CreateDevice(		nullptr,							//	default	adapter
-												  D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&md3dDevice));
-
-	//	Fallback	to	WARP	device. 
-	if(FAILED(hardwareResult)) {
-		ComPtr<IDXGIAdapter> pWarpAdapter;
-		ThrowIfFailed(mdxgiFactory>EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
-		ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&md3dDevice)));
-	}
-
-
-
-	//if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-	//	fprintf(stderr, "%s", SDL_GetError());
-	//	exit(-1);
-	//}
-	//// Request an DX12 4.5 context (should be core)
-	//SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-	//// Also request a depth buffer
-	//SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	//window = SDL_CreateWindow("DX12", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_DX12);
-	//context = SDL_GL_CreateContext(window);
-
-	//SDL_GL_MakeCurrent(window, context);
-
-	//int major, minor;
-	//SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
-	//SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
-
-	//glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-	//glEnable(GL_DEPTH_TEST);
-	//glDisable(GL_CULL_FACE);
-	//glClearDepth(1.0f);
-	//glDepthFunc(GL_LEQUAL);
-
-	//glViewport(0, 0, width, height);
-
-	//glewExperimental = GL_TRUE;
-	//GLenum err = glewInit();
-	//if (GLEW_OK != err) {
-	//	fprintf(stderr, "Error GLEW: %s\n", glewGetErrorString(err));
-	//}
+	OutputDebugString(L"DID STUFF");
 
 	return 0;
 }
