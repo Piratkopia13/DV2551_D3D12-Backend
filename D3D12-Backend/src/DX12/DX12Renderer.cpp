@@ -63,6 +63,16 @@ ID3D12Device4 * DX12Renderer::getDevice()
 	return m_device.Get();
 }
 
+ID3D12CommandQueue * DX12Renderer::getCmdQueue()
+{
+	return m_commandQueue.Get();
+}
+
+ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList()
+{
+	return m_commandList.Get();
+}
+
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
 	//return new VertexBufferGL(size, usage);
 	return nullptr;
