@@ -7,6 +7,7 @@
 #include <set>
 #include <assert.h>
 
+#include <d3dcompiler.h>
 #include "DX12Material.h"
 
 typedef unsigned int uint;
@@ -31,15 +32,15 @@ typedef unsigned int uint;
 	// - defines from map
 	// - existing shader code
 */
-std::vector<std::string> DX12Material::expandShaderText(std::string& shaderSource, ShaderType type) {
+std::string DX12Material::expandShaderText(std::string& shaderSource, ShaderType type) {
 
-	//std::vector<std::string> result{ "\n\n #version 450\n\0" };
-	//for (auto define : shaderDefines[type])
-	//	result.push_back(define);
-	//result.push_back(shaderSource);
+	std::stringstream ss;
+	ss << "\n\n // hai \n\0";
+	for (auto define : shaderDefines[type])
+		ss << define;
+	ss << shaderSource;
 
-	std::vector<std::string> result{ "not implemented" };
-	return result;
+	return ss.str();
 };
 
 DX12Material::DX12Material(const std::string& _name) {
@@ -101,44 +102,44 @@ void DX12Material::removeShader(ShaderType type) {
 
 int DX12Material::compileShader(ShaderType type, std::string& errString) {
 
+	// open the file and read it to a string "shaderText"
+	std::ifstream shaderFile(shaderFileNames[type]);
+	std::string shaderText;
+	if (shaderFile.is_open()) {
+		shaderText = std::string((std::istreambuf_iterator<char>(shaderFile)), std::istreambuf_iterator<char>());
+		shaderFile.close();
+	} else {
+		errString = "Cannot find file: " + shaderFileNames[type];
+		return -1;
+	}
 
-	std::string str("asd");
+	// make final vector<string> with shader source + defines + HLSL version
+	// in theory this uses move semantics (compiler does it automagically)
+	std::string shaderSource = expandShaderText(shaderText, type);
 
-	//D3DCompile(str.c_str(), str.length(), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob, nullptr);
+	// debug
+	//	DBOUTW(shaderSource.c_str());
+
+	ID3DBlob* shaderBlob;
+	ID3DBlob* errorBlob;
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#if defined( DEBUG ) || defined( _DEBUG )
+	flags |= D3DCOMPILE_DEBUG;
+#endif
+
+	HRESULT hr;
+	switch (type) {
+	case Material::ShaderType::VS:
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
+	case Material::ShaderType::PS:
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &shaderBlob, &errorBlob);
+	case Material::ShaderType::GS:
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "gs_5_0", 0, 0, &shaderBlob, &errorBlob);
+	case Material::ShaderType::CS:
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "cs_5_0", 0, 0, &shaderBlob, &errorBlob);
+	}
 
 
-	//// index in the the array "shaderObject[]";
-	//GLuint shaderIdx = (GLuint)type;
-
-	//// open the file and read it to a string "shaderText"
-	//std::ifstream shaderFile(shaderFileNames[type]);
-	//std::string shaderText;
-	//if (shaderFile.is_open()) {
-	//	shaderText = std::string((std::istreambuf_iterator<char>(shaderFile)), std::istreambuf_iterator<char>());
-	//	shaderFile.close();
-	//} else {
-	//	errString = "Cannot find file: " + shaderNames[shaderIdx];
-	//	return -1;
-	//}
-
-	//// make final vector<string> with shader source + defines + GLSL version
-	//// in theory this uses move semantics (compiler does it automagically)
-	//std::vector<std::string> shaderLines = expandShaderText(shaderText, type);
-
-	//// debug
-	//for (auto ex : shaderLines)
-	//	DBOUTW(ex.c_str());
-
-	//// OpenGL wants an array of GLchar* with null terminated strings 
-	//const GLchar** tempShaderLines = new const GLchar*[shaderLines.size()];
-	//int i = 0;
-	//for (std::string& text : shaderLines)
-	//	tempShaderLines[i++] = text.c_str();
-
-	//GLuint newShader = glCreateShader(mapShaderEnum[shaderIdx]);
-	//glShaderSource(newShader, shaderLines.size(), tempShaderLines, nullptr);
-	//// ask GL to compile this
-	//glCompileShader(newShader);
 	//// print error or anything...
 	//INFO_OUT(newShader, Shader);
 	//std::string err2;

@@ -1,5 +1,6 @@
 #pragma once
 #include "../Material.h"
+#include "DX12.h"
 #include <GL/glew.h>
 #include <vector>
 //#include "DX12ConstantBuffer.h"
@@ -60,6 +61,10 @@ public:
 	//std::map<unsigned int, DX12ConstantBuffer*> constantBuffers;
 
 private:
+	int compileShader(ShaderType type, std::string& errString);
+	std::string expandShaderText(std::string& shaderText, ShaderType type);
+
+private:
 	Material::ShaderType shaderTypes[4];
 
 	std::string shaderNames[4];
@@ -71,8 +76,6 @@ private:
 	// opengl program object
 	std::string name;
 	//GLuint program;
-	int compileShader(ShaderType type, std::string& errString);
-	std::vector<std::string> expandShaderText(std::string& shaderText, ShaderType type);
 
 };
 
