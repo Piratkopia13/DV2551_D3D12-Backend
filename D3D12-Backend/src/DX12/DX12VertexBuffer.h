@@ -11,7 +11,7 @@ private:
 	//cheap ref counting
 	unsigned int refs = 0;
 
-	wComPtr<D3D12_VERTEX_BUFFER_VIEW> m_vbView;
+	//wComPtr<D3D12_VERTEX_BUFFER_VIEW> m_vbView;
 
 	size_t m_size;
 
