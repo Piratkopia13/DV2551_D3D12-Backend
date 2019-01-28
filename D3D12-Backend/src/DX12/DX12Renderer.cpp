@@ -8,8 +8,8 @@
 //#include "MeshGL.h"
 #include "../Mesh.h"
 #include "../Technique.h"
-//#include "ResourceBindingGL.h"
-//#include "RenderStateGL.h"
+#include "DX12RenderState.h"
+#include "DX12Technique.h"
 //#include "VertexBufferGL.h"
 //#include "ConstantBufferGL.h"
 #include "DX12Texture2D.h"
@@ -17,7 +17,8 @@
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
 	, m_fenceValue(0)
-	, m_eventHandle(nullptr) {
+	, m_eventHandle(nullptr)
+	, m_globalWireframeMode(false) {
 }
 
 DX12Renderer::~DX12Renderer() {
@@ -87,15 +88,15 @@ Material* DX12Renderer::makeMaterial(const std::string& name) {
 }
 
 Technique* DX12Renderer::makeTechnique(Material* m, RenderState* r) {
-	Technique* t = new Technique(m, r);
+	DX12Technique* t = new DX12Technique((DX12Material*)m, (DX12RenderState*)r, this);
 	return t;
 }
 
 RenderState* DX12Renderer::makeRenderState() {
-	/*RenderStateGL* newRS = new RenderStateGL();
-	newRS->setGlobalWireFrame(&this->globalWireframeMode);
+	DX12RenderState* newRS = new DX12RenderState();
+	newRS->setGlobalWireFrame(&m_globalWireframeMode);
 	newRS->setWireFrame(false);
-	return (RenderState*)newRS;*/
+	return (RenderState*)newRS;
 	return nullptr;
 }
 

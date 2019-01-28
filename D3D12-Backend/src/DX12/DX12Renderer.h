@@ -66,6 +66,7 @@ protected:
 
 private:
 	std::unique_ptr<Win32Window> m_window;
+	bool m_globalWireframeMode;
 	
 	static const UINT NUM_SWAP_BUFFERS = 2;
 

@@ -36,6 +36,8 @@ DX12Material::DX12Material(const std::string& name) {
 };
 
 DX12Material::~DX12Material() {
+
+	delete[] m_inputElementDesc;
 	// delete attached constant buffers
 	//for (auto buffer : constantBuffers) {
 	//	if (buffer.second != nullptr) {
@@ -158,13 +160,16 @@ int DX12Material::compileShader(ShaderType type) {
 	m_shaderBlobs[(int)type] = shaderBlob;
 
 	////// Input Layout //////
-	D3D12_INPUT_ELEMENT_DESC inputElementDesc[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR"	, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	const unsigned int NUM_ELEMS = 4;
+	m_inputElementDesc = new D3D12_INPUT_ELEMENT_DESC[NUM_ELEMS]{
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR"	, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
-	m_inputLayoutDesc.pInputElementDescs = inputElementDesc;
-	m_inputLayoutDesc.NumElements = ARRAYSIZE(inputElementDesc);
+	m_inputLayoutDesc.pInputElementDescs = m_inputElementDesc;
+	m_inputLayoutDesc.NumElements = NUM_ELEMS;
 
 	return hr;
 }
