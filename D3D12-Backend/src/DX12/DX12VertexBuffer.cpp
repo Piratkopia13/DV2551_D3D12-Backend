@@ -1,6 +1,6 @@
 #include "DX12VertexBuffer.h"
 
-DX12VertexBuffer::DX12VertexBuffer(size_t size, ID3D12Device4) {
+DX12VertexBuffer::DX12VertexBuffer(size_t size) {
 }
 
 DX12VertexBuffer::~DX12VertexBuffer() {
