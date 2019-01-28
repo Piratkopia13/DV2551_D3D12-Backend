@@ -4,7 +4,7 @@
 
 //#include <GL/glew.h>
 
-//#include "MaterialGL.h"
+#include "DX12Material.h"
 //#include "MeshGL.h"
 #include "../Mesh.h"
 #include "../Technique.h"
@@ -79,8 +79,7 @@ VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USA
 };
 
 Material* DX12Renderer::makeMaterial(const std::string& name) {
-	//return new MaterialGL(name);
-	return nullptr;
+	return new DX12Material(name);
 }
 
 Technique* DX12Renderer::makeTechnique(Material* m, RenderState* r) {
