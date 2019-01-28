@@ -14,7 +14,11 @@
 //#include "ConstantBufferGL.h"
 //#include "Texture2DGL.h"
 
-DX12Renderer::DX12Renderer() {
+DX12Renderer::DX12Renderer() 
+	: m_renderTargetDescriptorSize(0)
+	, m_fenceValue(0)
+	, m_eventHandle(nullptr)
+{
 }
 
 DX12Renderer::~DX12Renderer() {
@@ -213,7 +217,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	// One RTV for each frame
 	for (UINT n = 0; n < NUM_SWAP_BUFFERS; n++) {
 		ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
-		m_device->CreateRenderTargetView(m_renderTargets[n], nullptr, cdh);
+		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, cdh);
 		cdh.ptr += m_renderTargetDescriptorSize;
 	}
 
