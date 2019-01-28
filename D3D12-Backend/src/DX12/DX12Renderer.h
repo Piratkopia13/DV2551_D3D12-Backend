@@ -3,6 +3,19 @@
 #include "../Renderer.h"
 #include "Win32Window.h"
 #include <memory>
+#include <d3d12.h>
+#include <wrl.h>
+
+// Link necessary d3d12 libraries.
+#pragma comment(lib,"d3dcompiler.lib")
+#pragma comment(lib, "D3D12.lib")
+#pragma comment(lib, "dxgi.lib")
+
+#define ThrowIfFailed(hr) { \
+	if (FAILED(hr)) { \
+		throw std::exception(); \
+	} \
+}
 
 class DX12Renderer : public Renderer {
 public:
@@ -34,8 +47,22 @@ public:
 	void frame();
 	void present();
 
+protected:
+	
+
 private:
 	std::unique_ptr<Win32Window> m_window;
+	
+
+	// DX12 stuff
+	ID3D12Device* m_device;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator; // Allocator only grows, use multple (one for each thing)
+	Microsoft::WRL::ComPtr<ID3D12CommandList> m_commandList;
+	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
+	UINT m_renderTargetDescriptorSize;
+	
 
 	//SDL_Window* window;
 	//SDL_GLContext context;

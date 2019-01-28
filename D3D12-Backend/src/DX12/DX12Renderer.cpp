@@ -102,6 +102,92 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 		return 1;
 	}
 
+
+	// 1. Find comlient adapter
+	// DXGIFactory
+
+
+
+	// Initialize DirectX12
+	if (adapter) {
+		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&m_device));
+		adapter->Release();
+	}
+
+	// 3. Create command queue/allocator/list
+	// At least one allocator/list per thread and one per 
+
+	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+	//queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	//queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+	// Create allocator
+	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandQueue)));
+	// Create command list
+	//ThrowIfFailed(m_device->CreateCommandList(asd, dasd, IID_PPV_ARGS(&m_commandQueue)));
+
+	// 4. Create fence
+	ThrowIfFailed(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+	m_fenceValue = 1;
+	m_eventHandle = CreateEvent(0, false, false, 0);
+
+
+	// 5. Create swap chain
+	//factory->CreateSwapChainForHwnd(m_commandQueue, wndHandle, &scDesc, nullptr, nullptr, reinterpret_cast<ID
+
+	// 6. Create render target descriptors
+
+	const UINT NUM_SWAP_BUFFERS = 2;
+	D3D12_DESCRIPTOR_HEAP_DESC dhd = {};
+	dhd.NumDescriptors = NUM_SWAP_BUFFERS;
+	dhd.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&m_renderTargetsHeap)));
+	// Create resources for the render target
+	m_renderTargetDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+
+	// One RTV for each frame
+	for (UINT n = 0; n < NUM_SWAP_BUFFERS; n++) {
+		// blah
+		hr = m_swapChain->GetBuffer(blah);
+		m_device->CreateRenderTargetView(blah);
+	}
+
+	// 8. Create root signature
+	// CANCER
+
+	// Other classes
+	{
+		// 10. Create pipeline state
+
+		// 12. Create vertex buffer resources
+
+		// 13. Draaaaaaw
+	}
+
+
+
+
+#if	defined(DEBUG)	||	defined(_DEBUG)	//	Enable	the	D3D12	debug	layer. 
+	{		
+		ComPtr<ID3D12Debug>	debugController;
+		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController->EnableDebugLayer();
+	} 
+#endif
+
+	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mdxgiFactory		//	Try	to	create	hardware	device. HRESULT	hardwareResult	=	D3D12CreateDevice(		nullptr,							//	default	adapter
+												  D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&md3dDevice));
+
+	//	Fallback	to	WARP	device. 
+	if(FAILED(hardwareResult)) {
+		ComPtr<IDXGIAdapter> pWarpAdapter;
+		ThrowIfFailed(mdxgiFactory>EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
+		ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&md3dDevice)));
+	}
+
+
+
 	//if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 	//	fprintf(stderr, "%s", SDL_GetError());
 	//	exit(-1);
@@ -201,8 +287,7 @@ void DX12Renderer::frame() {
 
 void DX12Renderer::present() {
 	//SDL_GL_SwapWindow(window);
-};
-
+}
 
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {
 	//glClearColor(r, g, b, a);
