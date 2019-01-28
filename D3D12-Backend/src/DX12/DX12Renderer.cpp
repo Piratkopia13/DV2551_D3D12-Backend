@@ -352,10 +352,6 @@ void DX12Renderer::present() {
 	//SDL_GL_SwapWindow(window);
 }
 
-ID3D12Device4 * DX12Renderer::getDevice()
-{
-	return m_device.Get();
-}
 
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {
 	//glClearColor(r, g, b, a);

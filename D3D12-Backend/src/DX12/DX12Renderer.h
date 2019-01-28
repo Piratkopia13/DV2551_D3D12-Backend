@@ -57,7 +57,6 @@ public:
 	void frame();
 	void present();
 
-	ID3D12Device4* getDevice();
 	
 
 protected:

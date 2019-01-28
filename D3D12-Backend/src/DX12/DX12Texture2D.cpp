@@ -1,6 +1,7 @@
 #include "DX12Texture2D.h"
 
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 DX12Texture2D::DX12Texture2D(DX12Renderer* _renderer) {
 	renderer = _renderer;

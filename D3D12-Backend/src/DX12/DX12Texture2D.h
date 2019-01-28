@@ -1,8 +1,7 @@
 #pragma once
 #include "../Texture2D.h"
 #include "DX12.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+
 #include "DX12Renderer.h"
 
 
