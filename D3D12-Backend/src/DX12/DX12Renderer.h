@@ -41,7 +41,7 @@ public:
 	Sampler2D* makeSampler2D();
 	std::string getShaderPath();
 	std::string getShaderExtension();
-
+	ID3D12Device4* getDevice();
 	int initialize(unsigned int width = 640, unsigned int height = 480);
 	void setWinTitle(const char* title);
 	int shutdown();

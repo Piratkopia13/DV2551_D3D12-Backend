@@ -156,6 +156,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\DX12\DX12Sampler2D.h" />
     <ClInclude Include="src\DX12\DX12Texture2D.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ConstantBuffer.h" />
@@ -188,6 +189,7 @@
     <ClInclude Include="src\VertexBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\DX12\DX12Sampler2D.cpp" />
     <ClCompile Include="src\DX12\DX12Texture2D.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\ConstantBuffer.cpp" />

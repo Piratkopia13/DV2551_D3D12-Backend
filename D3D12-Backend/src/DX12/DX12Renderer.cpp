@@ -12,7 +12,7 @@
 //#include "RenderStateGL.h"
 //#include "VertexBufferGL.h"
 //#include "ConstantBufferGL.h"
-//#include "Texture2DGL.h"
+#include "DX12Texture2D.h"
 
 DX12Renderer::DX12Renderer() 
 	: m_renderTargetDescriptorSize(0)
@@ -36,7 +36,7 @@ Mesh* DX12Renderer::makeMesh() {
 }
 
 Texture2D* DX12Renderer::makeTexture2D() {
-	//return (Texture2D*)new Texture2DGL();
+	return (Texture2D*)new DX12Texture2D(this);
 	return nullptr;
 }
 
@@ -56,6 +56,11 @@ std::string DX12Renderer::getShaderPath() {
 
 std::string DX12Renderer::getShaderExtension() {
 	return std::string(".hlsl");
+}
+
+ID3D12Device4 * DX12Renderer::getDevice()
+{
+	return m_device.Get();
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
