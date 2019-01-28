@@ -43,13 +43,9 @@ std::string DX12Material::expandShaderText(std::string& shaderSource, ShaderType
 	return ss.str();
 };
 
-DX12Material::DX12Material(const std::string& _name) {
+DX12Material::DX12Material(const std::string& name) {
 	isValid = false;
-	name = _name;
-	/*mapShaderEnum[(uint)ShaderType::VS] = GL_VERTEX_SHADER;
-	mapShaderEnum[(uint)ShaderType::PS] = GL_FRAGMENT_SHADER;
-	mapShaderEnum[(uint)ShaderType::GS] = GL_GEOMETRY_SHADER;
-	mapShaderEnum[(uint)ShaderType::CS] = GL_COMPUTE_SHADER;*/
+	m_materialName = name;
 };
 
 DX12Material::~DX12Material() {
@@ -100,6 +96,14 @@ void DX12Material::removeShader(ShaderType type) {
 	//};
 };
 
+ID3DBlob* DX12Material::getShaderBlob(Material::ShaderType type) {
+	return m_shaderBlobs[(int)type].Get();
+}
+
+D3D12_INPUT_LAYOUT_DESC DX12Material::getInputLayoutDesc() {
+	return m_inputLayoutDesc;
+}
+
 int DX12Material::compileShader(ShaderType type, std::string& errString) {
 
 	// open the file and read it to a string "shaderText"
@@ -120,8 +124,8 @@ int DX12Material::compileShader(ShaderType type, std::string& errString) {
 	// debug
 	//	DBOUTW(shaderSource.c_str());
 
-	ID3DBlob* shaderBlob;
-	ID3DBlob* errorBlob;
+	ID3DBlob* shaderBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( DEBUG ) || defined( _DEBUG )
 	flags |= D3DCOMPILE_DEBUG;
@@ -132,19 +136,35 @@ int DX12Material::compileShader(ShaderType type, std::string& errString) {
 	case Material::ShaderType::VS:
 		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
 	case Material::ShaderType::PS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "ps_5_0", flags, 0, &shaderBlob, &errorBlob);
 	case Material::ShaderType::GS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "gs_5_0", 0, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "gs_5_0", flags, 0, &shaderBlob, &errorBlob);
 	case Material::ShaderType::CS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "cs_5_0", 0, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "cs_5_0", flags, 0, &shaderBlob, &errorBlob);
 	}
 
+	if (FAILED(hr)) {
+		// Print shader compilation error
+		if (errorBlob) {
+			OutputDebugStringA((char*) errorBlob->GetBufferPointer());
+			errorBlob->Release();
+		}
+		if (shaderBlob)
+			shaderBlob->Release();
+		ThrowIfFailed(hr);
+	}
 
-	//// print error or anything...
-	//INFO_OUT(newShader, Shader);
-	//std::string err2;
-	//COMPILE_LOG(newShader, Shader, err2);
-	//shaderObjects[shaderIdx] = newShader;
+	m_shaderBlobs[(int)type] = shaderBlob;
+
+	////// Input Layout //////
+	D3D12_INPUT_ELEMENT_DESC inputElementDesc[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR"	, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	m_inputLayoutDesc.pInputElementDescs = inputElementDesc;
+	m_inputLayoutDesc.NumElements = ARRAYSIZE(inputElementDesc);
+
 	return 0;
 }
 
