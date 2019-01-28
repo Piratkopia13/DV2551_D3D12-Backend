@@ -51,13 +51,11 @@ ConstantBuffer* DX12Renderer::makeConstantBuffer(std::string NAME, unsigned int 
 }
 
 std::string DX12Renderer::getShaderPath() {
-	//return std::string("..\\assets\\GL45\\");
-	return "";
+	return std::string("..\\assets\\DX12\\");
 }
 
 std::string DX12Renderer::getShaderExtension() {
-	//return std::string(".glsl");
-	return "";
+	return std::string(".hlsl");
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
@@ -108,16 +106,12 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 		return 1;
 	}
 
-
 	// 1. Find comlient adapter
-	// DXGIFactory
-
-
 
 	// Initialize DirectX12
 	//dxgi1_6 is only needed for the initialization process using the adapter.
-	IDXGIFactory6*	factory = nullptr;
-	IDXGIAdapter1*	adapter = nullptr;
+	IDXGIFactory6* factory = nullptr;
+	IDXGIAdapter1* adapter = nullptr;
 	//First a factory is created to iterate through the adapters available.
 	CreateDXGIFactory(IID_PPV_ARGS(&factory));
 	for (UINT adapterIndex = 0;; ++adapterIndex) {

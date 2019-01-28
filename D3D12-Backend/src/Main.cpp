@@ -74,16 +74,25 @@ typedef union {
 
 void run() {
 
-	SDL_Event windowEvent;
-	while (true)
-	{
-		if (SDL_PollEvent(&windowEvent))
-		{
-			if (windowEvent.type == SDL_QUIT) break;
-			if (windowEvent.type == SDL_KEYUP && windowEvent.key.keysym.sym == SDLK_ESCAPE) break;
+	MSG msg = { 0 };
+	// Main message loop
+	while (msg.message != WM_QUIT) {
+
+		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		} else {
+
+			// Quit on escape or alt-f4
+			/*if (m_input.getKeyboardState().LeftAlt && m_input.getKeyboardState().F4)
+				PostQuitMessage(0);*/
+
+			// do the stuff
+			updateScene();
+			renderScene();
+
 		}
-		updateScene();
-		renderScene();
+
 	}
 }
 
@@ -95,29 +104,32 @@ void updateScene()
 	/*
 	    For each mesh in scene list, update their position 
 	*/
-	{
-		static long long shift = 0;
-		const int size = scene.size();
-		for (int i = 0; i < size; i++)
-		{
-			const float4 trans { 
-				xt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
-				yt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
-				i * (-1.0 / TOTAL_PLACES),
-				0.0
-			};
-			scene[i]->txBuffer->setData(&trans, sizeof(trans), scene[i]->technique->getMaterial(), TRANSLATION);
-		}
-		// just to make them move...
-		shift+=max(TOTAL_TRIS / 1000.0,TOTAL_TRIS / 100.0);
-	}
+	//{
+	//	static long long shift = 0;
+	//	const int size = scene.size();
+	//	for (int i = 0; i < size; i++)
+	//	{
+	//		const float4 trans { 
+	//			xt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
+	//			yt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
+	//			i * (-1.0 / TOTAL_PLACES),
+	//			0.0
+	//		};
+	//		scene[i]->txBuffer->setData(&trans, sizeof(trans), scene[i]->technique->getMaterial(), TRANSLATION);
+	//	}
+	//	// just to make them move...
+	//	shift+=max(TOTAL_TRIS / 1000.0,TOTAL_TRIS / 100.0);
+	//}
+
+	OutputDebugString(L"UPDATE\n");
+
 	return;
 };
 
 
 void renderScene()
 {
-	renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
+	/*renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
 	for (auto m : scene)
 	{
 		renderer->submit(m);
@@ -126,7 +138,9 @@ void renderScene()
 	renderer->present();
 	updateDelta();
 	sprintf_s(gTitleBuff, "OpenGL - %3.0lf", gLastDelta);
-	renderer->setWinTitle(gTitleBuff);
+	renderer->setWinTitle(gTitleBuff);*/
+	OutputDebugString(L"RENDER\n");
+
 }
 
 int initialiseTestbench()
@@ -303,10 +317,10 @@ int main(int argc, char *argv[])
 	renderer = Renderer::makeRenderer(Renderer::BACKEND::DX12);
 	renderer->initialize(800,600);
 	renderer->setWinTitle("DX12");
-	renderer->setClearColor(0.0, 0.1, 0.1, 1.0);
+	//renderer->setClearColor(0.0, 0.1, 0.1, 1.0);
 	//initialiseTestbench();
-	//run();
-	getchar();
-	shutdown();
+	run();
+
+	//shutdown();
 	return 0;
 };
