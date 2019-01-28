@@ -1,5 +1,6 @@
 #pragma once
 #include "../Material.h"
+#include "DX12.h"
 #include <GL/glew.h>
 #include <vector>
 //#include "DX12ConstantBuffer.h"
@@ -59,20 +60,22 @@ public:
 	void addConstantBuffer(std::string name, unsigned int location);
 	//std::map<unsigned int, DX12ConstantBuffer*> constantBuffers;
 
+
+	// DX12 specifics
+	ID3DBlob* getShaderBlob(Material::ShaderType type);
+	D3D12_INPUT_LAYOUT_DESC getInputLayoutDesc();
+
 private:
-	Material::ShaderType shaderTypes[4];
-
-	std::string shaderNames[4];
-
-	// opengl shader object
-	//GLuint shaderObjects[4] = { 0,0,0,0 };
-
-	// TODO: change to PIPELINE
-	// opengl program object
-	std::string name;
-	//GLuint program;
 	int compileShader(ShaderType type, std::string& errString);
-	std::vector<std::string> expandShaderText(std::string& shaderText, ShaderType type);
+	std::string expandShaderText(std::string& shaderText, ShaderType type);
+
+private:
+	std::string m_materialName;
+	Material::ShaderType m_shaderTypes[4];
+	std::string m_shaderNames[4];
+	// Compiled shader blobs
+	wComPtr<ID3DBlob> m_shaderBlobs[4];
+	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 
 };
 
