@@ -87,10 +87,11 @@ void DX12Material::removeShader(ShaderType type) {
 };
 
 ID3DBlob* DX12Material::getShaderBlob(Material::ShaderType type) {
+	assert(isValid);
 	return m_shaderBlobs[(int)type].Get();
 }
 
-D3D12_INPUT_LAYOUT_DESC DX12Material::getInputLayoutDesc() {
+D3D12_INPUT_LAYOUT_DESC& DX12Material::getInputLayoutDesc() {
 	return m_inputLayoutDesc;
 }
 
@@ -119,24 +120,25 @@ int DX12Material::compileShader(ShaderType type) {
 
 	ID3DBlob* shaderBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+	UINT flags = 0;
 #if defined( DEBUG ) || defined( _DEBUG )
 	flags |= D3DCOMPILE_DEBUG;
+	flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
 	HRESULT hr;
 	switch (type) {
 	case Material::ShaderType::VS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "VSMain", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::PS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "ps_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "PSMain", "ps_5_0", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::GS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "gs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "GSMain", "gs_5_0", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::CS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "main", "cs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "CSMain", "cs_5_0", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	}
 
@@ -161,18 +163,6 @@ int DX12Material::compileShader(ShaderType type) {
 
 	m_shaderBlobs[(int)type] = shaderBlob;
 
-	////// Input Layout //////
-	const unsigned int NUM_ELEMS = 4;
-	m_inputElementDesc = new D3D12_INPUT_ELEMENT_DESC[NUM_ELEMS]{
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR"	, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
-
-	m_inputLayoutDesc.pInputElementDescs = m_inputElementDesc;
-	m_inputLayoutDesc.NumElements = NUM_ELEMS;
-
 	return hr;
 }
 
@@ -184,6 +174,17 @@ int DX12Material::compileMaterial(std::string& errString) {
 	// compile shaders
 	compileShader(ShaderType::VS);
 	compileShader(ShaderType::PS);
+
+	////// Input Layout //////
+	const unsigned int NUM_ELEMS = 4;
+	m_inputElementDesc = new D3D12_INPUT_ELEMENT_DESC[4];
+	m_inputElementDesc[0] = { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,	 0, 0,								D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	m_inputElementDesc[1] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	m_inputElementDesc[2] = { "COLOR"	, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	m_inputElementDesc[3] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,		 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	m_inputLayoutDesc.pInputElementDescs = m_inputElementDesc;
+	m_inputLayoutDesc.NumElements = NUM_ELEMS;
 
 	isValid = true;
 	return 0;

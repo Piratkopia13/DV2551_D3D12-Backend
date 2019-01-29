@@ -30,7 +30,7 @@ public:
 
 	// DX12 specifics
 	ID3DBlob* getShaderBlob(Material::ShaderType type);
-	D3D12_INPUT_LAYOUT_DESC getInputLayoutDesc();
+	D3D12_INPUT_LAYOUT_DESC& getInputLayoutDesc();
 
 private:
 	int compileShader(ShaderType type);

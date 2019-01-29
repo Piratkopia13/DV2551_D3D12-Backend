@@ -2,16 +2,12 @@
 
 #include <stdio.h>
 
-//#include <GL/glew.h>
-
 #include "DX12Material.h"
-//#include "MeshGL.h"
-#include "../Mesh.h"
+#include "DX12Mesh.h"
 #include "../Technique.h"
 #include "DX12RenderState.h"
 #include "DX12Technique.h"
-//#include "VertexBufferGL.h"
-//#include "ConstantBufferGL.h"
+#include "DX12ConstantBuffer.h"
 #include "DX12Texture2D.h"
 #include "DX12VertexBuffer.h"
 
@@ -34,13 +30,11 @@ int DX12Renderer::shutdown() {
 }
 
 Mesh* DX12Renderer::makeMesh() {
-	//return new MeshGL();
-	return nullptr;
+	return new DX12Mesh();
 }
 
 Texture2D* DX12Renderer::makeTexture2D() {
 	return (Texture2D*)new DX12Texture2D(this);
-	return nullptr;
 }
 
 Sampler2D* DX12Renderer::makeSampler2D() {
@@ -49,7 +43,7 @@ Sampler2D* DX12Renderer::makeSampler2D() {
 }
 
 ConstantBuffer* DX12Renderer::makeConstantBuffer(std::string NAME, unsigned int location) {
-	//return new ConstantBufferGL(NAME, location);
+	return new DX12ConstantBuffer(NAME, location, this);
 	return nullptr;
 }
 
@@ -61,23 +55,23 @@ std::string DX12Renderer::getShaderExtension() {
 	return std::string(".hlsl");
 }
 
-ID3D12Device4 * DX12Renderer::getDevice() const {
+ID3D12Device4* DX12Renderer::getDevice() const {
 	return m_device.Get();
 }
 
-ID3D12CommandQueue * DX12Renderer::getCmdQueue() const {
+ID3D12CommandQueue* DX12Renderer::getCmdQueue() const {
 	return m_commandQueue.Get();
 }
 
-ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList() const {
+ID3D12GraphicsCommandList3* DX12Renderer::getCmdList() const {
 	return m_commandList.Get();
 }
 
-ID3D12RootSignature * DX12Renderer::getRootSignature() const {
+ID3D12RootSignature* DX12Renderer::getRootSignature() const {
 	return m_rootSignature.Get();
 }
 
-ID3D12CommandAllocator * DX12Renderer::getCmdAllocator() const {
+ID3D12CommandAllocator* DX12Renderer::getCmdAllocator() const {
 	return m_commandAllocator.Get();
 }
 
@@ -92,7 +86,6 @@ UINT DX12Renderer::getFrameIndex() const {
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
 	// Temp size
 	return new DX12VertexBuffer(size, sizeof(float) * 8, this);
-	//return nullptr;
 };
 
 Material* DX12Renderer::makeMaterial(const std::string& name) {

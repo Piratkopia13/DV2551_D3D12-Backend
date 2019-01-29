@@ -55,7 +55,7 @@ void updateDelta()
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
-constexpr int TOTAL_TRIS = 100.0f;
+constexpr int TOTAL_TRIS = 100;
 // this has to do with how the triangles are spread in the screen, not important.
 constexpr int TOTAL_PLACES = 2 * TOTAL_TRIS;
 float xt[TOTAL_PLACES], yt[TOTAL_PLACES];
@@ -157,30 +157,41 @@ int initialiseTestbench()
 
 	std::string defineDiffuse = "#define DIFFUSE_SLOT " + std::to_string(DIFFUSE_SLOT) + "\n";
 
+	//std::vector<std::vector<std::string>> materialDefs = {
+	//	// vertex shader, fragment shader, defines
+	//	// shader filename extension must be asked to the renderer
+	//	// these strings should be constructed from the IA.h file!!!
+
+	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+	//	   defineTXName + defineDiffCol + defineDiffColName }, 
+
+	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+	//	   defineTXName + defineDiffCol + defineDiffColName }, 
+
+	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+	//	   defineTXName + defineDiffCol + defineDiffColName + defineDiffuse	},
+
+	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+	//	   defineTXName + defineDiffCol + defineDiffColName }, 
+	//};
+
+
+	// Test
 	std::vector<std::vector<std::string>> materialDefs = {
 		// vertex shader, fragment shader, defines
 		// shader filename extension must be asked to the renderer
 		// these strings should be constructed from the IA.h file!!!
 
-		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-		   defineTXName + defineDiffCol + defineDiffColName }, 
-
-		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-		   defineTXName + defineDiffCol + defineDiffColName }, 
-
-		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-		   defineTXName + defineDiffCol + defineDiffColName + defineDiffuse	},
-
-		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-		   defineTXName + defineDiffCol + defineDiffColName }, 
+		{ "VertexShader", "FragmentShader", "" },
 	};
+
 
 	float degToRad = M_PI / 180.0;
 	float scale = (float)TOTAL_PLACES / 359.9;
 	for (int a = 0; a < TOTAL_PLACES; a++)
 	{
-		xt[a] = 0.8f * cosf(degToRad * ((float)a/scale) * 3.0);
-		yt[a] = 0.8f * sinf(degToRad * ((float)a/scale) * 2.0);
+		xt[a] = 0.8f * cosf(degToRad * ((float)a/scale) * 3.0f);
+		yt[a] = 0.8f * sinf(degToRad * ((float)a/scale) * 2.0f);
 	};
 
 	// triangle geometry:
@@ -199,60 +210,60 @@ int initialiseTestbench()
 	};
 
 
-	// TEST
-	int i = 0;
-	Material* m = renderer->makeMaterial("material_" + std::to_string(i));
-	m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
-	m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
+	//// TEST
+	//int i = 0;
+	//Material* m = renderer->makeMaterial("material_" + std::to_string(i));
+	//m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
+	//m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
 
-	m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
-	m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
+	//m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
+	//m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
 
-	std::string err;
-	m->compileMaterial(err);
+	//std::string err;
+	//m->compileMaterial(err);
 
-	// add a constant buffer to the material, to tint every triangle using this material
-	m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
-	// no need to update anymore
-	// when material is bound, this buffer should be also bound for access.
+	//// add a constant buffer to the material, to tint every triangle using this material
+	//m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
+	//// no need to update anymore
+	//// when material is bound, this buffer should be also bound for access.
 
-	m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
+	//m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
 
-	materials.push_back(m);
+	//materials.push_back(m);
 
 
-	//for (int i = 0; i < materialDefs.size(); i++)
-	//{
-	//	// set material name from text file?
-	//	Material* m = renderer->makeMaterial("material_" + std::to_string(i));
-	//	m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
-	//	m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
+	for (int i = 0; i < materialDefs.size(); i++)
+	{
+		// set material name from text file?
+		Material* m = renderer->makeMaterial("material_" + std::to_string(i));
+		m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
+		m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
 
-	//	m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
-	//	m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
+		m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
+		m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
 
-	//	std::string err;
-	//	m->compileMaterial(err);
+		std::string err;
+		m->compileMaterial(err);
 
-	//	// add a constant buffer to the material, to tint every triangle using this material
-	//	m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
-	//	// no need to update anymore
-	//	// when material is bound, this buffer should be also bound for access.
+		// add a constant buffer to the material, to tint every triangle using this material
+		m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
+		// no need to update anymore
+		// when material is bound, this buffer should be also bound for access.
 
-	//	m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
-	//	
-	//	materials.push_back(m);
-	//}
+		m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
+		
+		materials.push_back(m);
+	}
 
 	// one technique with wireframe
 	RenderState* renderState1 = renderer->makeRenderState();
 	renderState1->setWireFrame(true);
 
 	// basic technique
-	//techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
-	//techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
-	//techniques.push_back(renderer->makeTechnique(materials[2], renderer->makeRenderState()));
-	//techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));
+	techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
+	/*techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
+	techniques.push_back(renderer->makeTechnique(materials[2], renderer->makeRenderState()));
+	techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));*/
 
 	//// create texture
 	//Texture2D* fatboy = renderer->makeTexture2D();
@@ -272,12 +283,12 @@ int initialiseTestbench()
 	//// Create a mesh array with 3 basic vertex buffers.
 	for (int i = 0; i < TOTAL_TRIS; i++) {
 
-	//	Mesh* m = renderer->makeMesh();
+		Mesh* m = renderer->makeMesh();
 
 		constexpr auto numberOfPosElements = std::extent<decltype(triPos)>::value;
 		size_t offset = i * sizeof(triPos);
 		pos->setData(triPos, sizeof(triPos), offset);
-	//	m->addIAVertexBufferBinding(pos, offset, numberOfPosElements, sizeof(float4), POSITION);
+		m->addIAVertexBufferBinding(pos, offset, numberOfPosElements, sizeof(float4), POSITION);
 
 	//	constexpr auto numberOfNorElements = std::extent<decltype(triNor)>::value;
 	//	offset = i * sizeof(triNor);
@@ -289,14 +300,14 @@ int initialiseTestbench()
 	//	uvs->setData(triUV, sizeof(triUV), offset);
 	//	m->addIAVertexBufferBinding(uvs, offset, numberOfUVElements , sizeof(float2), TEXTCOORD);
 
-	//	// we can create a constant buffer outside the material, for example as part of the Mesh.
-	//	m->txBuffer = renderer->makeConstantBuffer(std::string(TRANSLATION_NAME), TRANSLATION);
+		// we can create a constant buffer outside the material, for example as part of the Mesh.
+		m->txBuffer = renderer->makeConstantBuffer(std::string(TRANSLATION_NAME), TRANSLATION);
 	//	
-	//	m->technique = techniques[ i % 4];
-	//	if (i % 4 == 2)
-	//		m->addTexture(textures[0], DIFFUSE_SLOT);
+		m->technique = techniques[ i % techniques.size()];
+		/*if (i % techniques.size() == 2)
+			m->addTexture(textures[0], DIFFUSE_SLOT);*/
 
-	//	scene.push_back(m);
+		scene.push_back(m);
 	}
 	return 0;
 }

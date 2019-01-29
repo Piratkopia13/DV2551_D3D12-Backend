@@ -12,7 +12,7 @@ cbuffer DIFFUSE_TINT_NAME : register(b1) {
 	float4 diffuseTint;
 }
 
-float4 main(VSOut input) : SV_TARGET0 {
+float4 PSMain(VSOut input) : SV_TARGET0 {
 
 #ifdef DIFFUSE_SLOT
     float4 color = tex.Sample(ss, input.texCoord);
