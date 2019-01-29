@@ -200,6 +200,7 @@ int DX12Material::enable() {
 
 	//glUseProgram(program);
 
+	// TODO: support multiple CBs by using a single descriptorHeap
 	for (auto cb : m_constantBuffers) {
 		cb.second->bind(this);
 	}

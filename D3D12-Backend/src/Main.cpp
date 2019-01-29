@@ -10,6 +10,9 @@
 #include "Texture2D.h"
 #include <math.h>
 
+// TODO: REMOVE THIS INCLUDE AND ALL WaitForGPU
+#include "DX12/DX12Renderer.h"
+
 using namespace std;
 Renderer* renderer;
 
@@ -129,7 +132,7 @@ void updateScene()
 
 void renderScene()
 {
-	/*renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
+	renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
 	for (auto m : scene)
 	{
 		renderer->submit(m);
@@ -137,8 +140,8 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	sprintf_s(gTitleBuff, "OpenGL - %3.0lf", gLastDelta);
-	renderer->setWinTitle(gTitleBuff);*/
+	sprintf_s(gTitleBuff, "DX12 - %3.0lf", gLastDelta);
+	renderer->setWinTitle(gTitleBuff);
 	//OutputDebugString(L"RENDER\n");
 
 }
@@ -157,32 +160,22 @@ int initialiseTestbench()
 
 	std::string defineDiffuse = "#define DIFFUSE_SLOT " + std::to_string(DIFFUSE_SLOT) + "\n";
 
-	//std::vector<std::vector<std::string>> materialDefs = {
-	//	// vertex shader, fragment shader, defines
-	//	// shader filename extension must be asked to the renderer
-	//	// these strings should be constructed from the IA.h file!!!
-
-	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-	//	   defineTXName + defineDiffCol + defineDiffColName }, 
-
-	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-	//	   defineTXName + defineDiffCol + defineDiffColName }, 
-
-	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-	//	   defineTXName + defineDiffCol + defineDiffColName + defineDiffuse	},
-
-	//	{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
-	//	   defineTXName + defineDiffCol + defineDiffColName }, 
-	//};
-
-
-	// Test
 	std::vector<std::vector<std::string>> materialDefs = {
 		// vertex shader, fragment shader, defines
 		// shader filename extension must be asked to the renderer
 		// these strings should be constructed from the IA.h file!!!
 
-		{ "VertexShader", "FragmentShader", "" },
+		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+		   defineTXName + defineDiffCol + defineDiffColName }, 
+
+		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+		   defineTXName + defineDiffCol + defineDiffColName }, 
+
+		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+		   defineTXName + defineDiffCol + defineDiffColName + defineDiffuse	},
+
+		{ "VertexShader", "FragmentShader", definePos + defineNor + defineUV + defineTX + 
+		   defineTXName + defineDiffCol + defineDiffColName }, 
 	};
 
 
@@ -261,9 +254,9 @@ int initialiseTestbench()
 
 	// basic technique
 	techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
-	/*techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
+	techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
 	techniques.push_back(renderer->makeTechnique(materials[2], renderer->makeRenderState()));
-	techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));*/
+	techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));
 
 	//// create texture
 	//Texture2D* fatboy = renderer->makeTexture2D();
@@ -351,9 +344,14 @@ int main(int argc, char *argv[])
 	renderer = Renderer::makeRenderer(Renderer::BACKEND::DX12);
 	renderer->initialize(800,600);
 	renderer->setWinTitle("DX12");
-	//renderer->setClearColor(0.0, 0.1, 0.1, 1.0);
+	renderer->setClearColor(0.7f, 0.1f, 0.1f, 1.0f);
 	initialiseTestbench();
+
+	static_cast<DX12Renderer*>(renderer)->waitForGPU();
+
 	run();
+
+	static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	//shutdown();
 	return 0;

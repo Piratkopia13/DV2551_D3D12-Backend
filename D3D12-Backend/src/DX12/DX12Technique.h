@@ -13,6 +13,8 @@ public:
 	~DX12Technique();
 	virtual void enable(Renderer* renderer) override;
 
+	ID3D12PipelineState* getPipelineState() const;
+
 private:
 	wComPtr<ID3D12PipelineState> m_pipelineState;
 

@@ -4,8 +4,6 @@
 #include "DX12.h"
 #include "Win32Window.h"
 #include <memory>
-#include <wrl.h>
-#include <d3d12.h>
 #include <dxgi1_6.h> //Only used for initialization of the device and swap chain.
 #include <d3dcompiler.h>
 
@@ -13,6 +11,9 @@
 #pragma comment(lib,"d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
+
+class DX12Mesh;
+class DX12Technique;
 
 class DX12Renderer : public Renderer {
 public:
@@ -29,6 +30,7 @@ public:
 	Technique* makeTechnique(Material* m, RenderState* r);
 	Texture2D* makeTexture2D();
 	Sampler2D* makeSampler2D();
+
 	std::string getShaderPath();
 	std::string getShaderExtension();
 	ID3D12Device4* getDevice() const;
@@ -51,6 +53,7 @@ public:
 	void frame();
 	void present();
 	
+	void waitForGPU();
 
 protected:
 	
@@ -58,6 +61,7 @@ protected:
 private:
 	std::unique_ptr<Win32Window> m_window;
 	bool m_globalWireframeMode;
+	float m_clearColor[4];
 	
 	static const UINT NUM_SWAP_BUFFERS = 2;
 	UINT m_frameIndex;
@@ -86,8 +90,8 @@ private:
 	UINT8* m_pDataCur = nullptr; // Current position of upload buffer
 	UINT8* m_pDataEnd = nullptr; // End position of upload buffer
 
-	std::vector<Mesh*> drawList;
-	std::unordered_map<Technique*, std::vector<Mesh*>> drawList2;
+	//std::vector<Mesh*> drawList;
+	std::unordered_map<DX12Technique*, std::vector<DX12Mesh*>> drawList2;
 
 	//bool globalWireframeMode = false;
 

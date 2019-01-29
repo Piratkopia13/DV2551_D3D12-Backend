@@ -53,11 +53,15 @@ DX12Technique::~DX12Technique() {
 void DX12Technique::enable(Renderer* renderer) {
 	// better to delegate the render state to the renderer, it can be
 	// more clever about changes with current render state set.
-	/*renderer->setRenderState(renderState);
-	material->enable();*/
+	//renderer->setRenderState(renderState);
+	material->enable();
 
 	DX12Renderer* dxRenderer = static_cast<DX12Renderer*>(renderer);
 
 	dxRenderer->getCmdList()->Reset(dxRenderer->getCmdAllocator(), m_pipelineState.Get());
+}
+
+ID3D12PipelineState* DX12Technique::getPipelineState() const {
+	return m_pipelineState.Get();
 }
 

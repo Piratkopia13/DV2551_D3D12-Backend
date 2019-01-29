@@ -80,7 +80,7 @@ UINT DX12Renderer::getNumSwapBuffers() const {
 }
 
 UINT DX12Renderer::getFrameIndex() const {
-	return m_frameIndex;
+	return m_swapChain->GetCurrentBackBufferIndex();
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
@@ -315,11 +315,11 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
  TODO.
 */
 
-//int perMat = 1;
+int perMat = 1;
 void DX12Renderer::submit(Mesh* mesh) {
-	/*if (perMat) {
-		drawList2[mesh->technique].push_back(mesh);
-	} else
+	if (perMat) {
+		drawList2[(DX12Technique*)mesh->technique].push_back((DX12Mesh*)mesh);
+	}/* else
 		drawList.push_back(mesh);*/
 };
 
@@ -328,54 +328,138 @@ void DX12Renderer::submit(Mesh* mesh) {
  TODO.
 */
 void DX12Renderer::frame() {
-	//if (perMat != 1) {
 
-	//	for (auto mesh : drawList) {
-	//		mesh->technique->enable(this);
-	//		size_t numberElements = mesh->geometryBuffers[0].numElements;
-	//		glBindTexture(GL_TEXTURE_2D, 0);
-	//		for (auto t : mesh->textures) {
-	//			// we do not really know here if the sampler has been
-	//			// defined in the shader.
-	//			t.second->bind(t.first);
-	//		}
-	//		for (auto element : mesh->geometryBuffers) {
-	//			mesh->bindIAVertexBuffer(element.first);
-	//		}
-	//		mesh->txBuffer->bind(mesh->technique->getMaterial());
-	//		glDrawArrays(GL_TRIANGLES, 0, numberElements);
-	//	}
-	//	drawList.clear();
-	//} else {
-	//	for (auto work : drawList2) {
-	//		work.first->enable(this);
-	//		for (auto mesh : work.second) {
-	//			size_t numberElements = mesh->geometryBuffers[0].numElements;
-	//			glBindTexture(GL_TEXTURE_2D, 0);
-	//			for (auto t : mesh->textures) {
-	//				// we do not really know here if the sampler has been
-	//				// defined in the shader.
-	//				t.second->bind(t.first);
-	//			}
-	//			for (auto element : mesh->geometryBuffers) {
-	//				mesh->bindIAVertexBuffer(element.first);
-	//			}
-	//			mesh->txBuffer->bind(work.first->getMaterial());
-	//			glDrawArrays(GL_TRIANGLES, 0, numberElements);
-	//		}
-	//	}
-	//	drawList2.clear();
-	//}
+	// Command list allocators can only be reset when the associated command lists have
+	// finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
+	m_commandAllocator->Reset();
+	
+	// Indicate that the back buffer will be used as render target.
+	D3D12_RESOURCE_BARRIER barrierDesc = {};
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	m_commandList->ResourceBarrier(1, &barrierDesc);
+
+	// Record commands
+	// Get the handle for the current render target used as back buffer
+	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+	cdh.ptr += m_renderTargetDescriptorSize * getFrameIndex();
+
+	m_commandList->OMSetRenderTargets(1, &cdh, true, nullptr);
+
+	m_commandList->ClearRenderTargetView(cdh, m_clearColor, 0, nullptr);
+
+
+	if (perMat != 1) {
+
+		//for (auto mesh : drawList) {
+		//	mesh->technique->enable(this);
+		//	size_t numberElements = mesh->geometryBuffers[0].numElements;
+		//	//glBindTexture(GL_TEXTURE_2D, 0);
+		//	for (auto t : mesh->textures) {
+		//		// we do not really know here if the sampler has been
+		//		// defined in the shader.
+		//		t.second->bind(t.first);
+		//	}
+		//	for (auto element : mesh->geometryBuffers) {
+		//		mesh->bindIAVertexBuffer(element.first);
+		//	}
+		//	mesh->txBuffer->bind(mesh->technique->getMaterial());
+		//	//glDrawArrays(GL_TRIANGLES, 0, numberElements);
+		//}
+		//drawList.clear();
+	} else {
+		for (auto work : drawList2) {
+
+
+			m_commandList->Reset(m_commandAllocator.Get(), work.first->getPipelineState());
+			// Set root signature
+			m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+			// Enable the technique
+			work.first->enable(this);
+
+			// Set topology
+			m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//Set necessary states.
+			m_commandList->RSSetViewports(1, &m_viewport);
+			m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
+
+			for (auto mesh : work.second) {
+				size_t numberElements = mesh->geometryBuffers[0].numElements;
+				//glBindTexture(GL_TEXTURE_2D, 0);
+				for (auto t : mesh->textures) {
+					// we do not really know here if the sampler has been
+					// defined in the shader.
+					t.second->bind(t.first);
+				}
+
+				for (auto element : mesh->geometryBuffers) {
+					mesh->bindIAVertexBuffer(element.first);
+				}
+				//mesh->txBuffer->bind(work.first->getMaterial());
+				m_commandList->DrawInstanced(numberElements, 1, 0, 0);
+				//glDrawArrays(GL_TRIANGLES, 0, numberElements);
+			}
+
+			//Indicate that the back buffer will now be used to present.
+			barrierDesc = {};
+			barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
+			barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+			m_commandList->ResourceBarrier(1, &barrierDesc);
+
+			//Close the list to prepare it for execution.
+			m_commandList->Close();
+
+
+		}
+		drawList2.clear();
+	}
+
+
+	//Execute the command list.
+	ID3D12CommandList* listsToExecute[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
 
 };
 
 void DX12Renderer::present() {
-	//SDL_GL_SwapWindow(window);
-	m_frameIndex = (m_frameIndex + 1) % NUM_SWAP_BUFFERS;
+
+	//Present the frame.
+	DXGI_PRESENT_PARAMETERS pp = {};
+	m_swapChain->Present1(0, 0, &pp);
+
+	waitForGPU(); //Wait for GPU to finish.
+				  //NOT BEST PRACTICE, only used as such for simplicity.
+}
+
+void DX12Renderer::waitForGPU() {
+	//WAITING FOR EACH FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
+	//This is code implemented as such for simplicity. The cpu could for example be used
+	//for other tasks to prepare the next frame while the current one is being rendered.
+
+	//Signal and increment the fence value.
+	const UINT64 fence = m_fenceValue;
+	m_commandQueue->Signal(m_fence.Get(), fence);
+	m_fenceValue++;
+
+	//Wait until command queue is done.
+	if (m_fence->GetCompletedValue() < fence) {
+		m_fence->SetEventOnCompletion(fence, m_eventHandle);
+		WaitForSingleObject(m_eventHandle, INFINITE);
+	}
 }
 
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {
-	//glClearColor(r, g, b, a);
+	m_clearColor[0] = r;
+	m_clearColor[1] = g;
+	m_clearColor[2] = b;
+	m_clearColor[3] = a;
 };
 
 void DX12Renderer::clearBuffer(unsigned int flag) {
