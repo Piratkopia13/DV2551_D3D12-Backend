@@ -242,7 +242,7 @@ int initialiseTestbench()
 	renderState1->setWireFrame(true);
 
 	// basic technique
-	techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
+	//techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
 	//techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
 	//techniques.push_back(renderer->makeTechnique(materials[2], renderer->makeRenderState()));
 	//techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));
@@ -258,18 +258,18 @@ int initialiseTestbench()
 	//samplers.push_back(sampler);
 
 	//// pre-allocate one single vertex buffer for ALL triangles
-	//pos = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triPos), VertexBuffer::DATA_USAGE::STATIC);
+	pos = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triPos), VertexBuffer::DATA_USAGE::STATIC);
 	//nor = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triNor), VertexBuffer::DATA_USAGE::STATIC);
 	//uvs = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triUV), VertexBuffer::DATA_USAGE::STATIC);
 
 	//// Create a mesh array with 3 basic vertex buffers.
-	//for (int i = 0; i < TOTAL_TRIS; i++) {
+	for (int i = 0; i < TOTAL_TRIS; i++) {
 
 	//	Mesh* m = renderer->makeMesh();
 
-	//	constexpr auto numberOfPosElements = std::extent<decltype(triPos)>::value;
-	//	size_t offset = i * sizeof(triPos);
-	//	pos->setData(triPos, sizeof(triPos), offset);
+		constexpr auto numberOfPosElements = std::extent<decltype(triPos)>::value;
+		size_t offset = i * sizeof(triPos);
+		pos->setData(triPos, sizeof(triPos), offset);
 	//	m->addIAVertexBufferBinding(pos, offset, numberOfPosElements, sizeof(float4), POSITION);
 
 	//	constexpr auto numberOfNorElements = std::extent<decltype(triNor)>::value;
@@ -290,7 +290,7 @@ int initialiseTestbench()
 	//		m->addTexture(textures[0], DIFFUSE_SLOT);
 
 	//	scene.push_back(m);
-	//}
+	}
 	return 0;
 }
 

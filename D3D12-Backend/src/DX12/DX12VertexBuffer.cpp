@@ -17,6 +17,8 @@ DX12VertexBuffer::DX12VertexBuffer(size_t byteSize, size_t vertexSize, DX12Rende
 		nullptr,
 		IID_PPV_ARGS(m_vertexBuffer.GetAddressOf())));
 
+	m_vertexBuffer->SetName(L"vertex buffer");
+
 	m_lastBoundVBSlot = -1;
 }
 

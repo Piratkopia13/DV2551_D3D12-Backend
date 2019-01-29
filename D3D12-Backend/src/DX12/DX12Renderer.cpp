@@ -13,6 +13,7 @@
 //#include "VertexBufferGL.h"
 //#include "ConstantBufferGL.h"
 #include "DX12Texture2D.h"
+#include "DX12VertexBuffer.h"
 
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
@@ -79,8 +80,9 @@ ID3D12CommandAllocator * DX12Renderer::getCmdAllocator() {
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
-	//return new VertexBufferGL(size, usage);
-	return nullptr;
+	// Temp size
+	return new DX12VertexBuffer(size, sizeof(float) * 8, this);
+	//return nullptr;
 };
 
 Material* DX12Renderer::makeMaterial(const std::string& name) {
@@ -112,6 +114,16 @@ void DX12Renderer::setWinTitle(const char* title) {
 }
 
 int DX12Renderer::initialize(unsigned int width, unsigned int height) {
+
+#ifdef _DEBUG
+	//Enable the D3D12 debug layer.
+	ID3D12Debug* debugController = nullptr;
+
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
+		debugController->EnableDebugLayer();
+	}
+	SafeRelease(&debugController);
+#endif
 
 	//GetWindowLong(&hwnd, 0);
 	//GetModuleHandle(NULL);
