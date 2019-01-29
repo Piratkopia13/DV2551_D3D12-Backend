@@ -48,9 +48,6 @@ public:
 	void submit(Mesh* mesh);
 	void frame();
 	void present();
-
-	ID3D12Device4* getDevice();
-	ID3D12GraphicsCommandList3* getCommandsList();
 	
 
 protected:

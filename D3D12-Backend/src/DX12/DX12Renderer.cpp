@@ -357,12 +357,6 @@ void DX12Renderer::present() {
 	//SDL_GL_SwapWindow(window);
 }
 
-
-ID3D12GraphicsCommandList3 * DX12Renderer::getCommandsList()
-{
-	return m_commandList.Get();
-}
-
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {
 	//glClearColor(r, g, b, a);
 };

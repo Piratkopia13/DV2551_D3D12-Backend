@@ -29,24 +29,26 @@ void DX12VertexBuffer::setData(const void * data, size_t size, size_t offset) {
 	assert(size + offset <= m_byteSize);
 
 	ID3D12Resource* uploadBuffer = nullptr;
-	D3DUtils::UpdateDefaultBufferData(m_renderer->getDevice(), m_renderer->getCommandsList(),
+	D3DUtils::UpdateDefaultBufferData(m_renderer->getDevice(), m_renderer->getCmdList(),
 		data, size, offset, m_vertexBuffer.Get(), uploadBuffer);
 	// To be released, let renderer handle later
 	m_uploadBuffers.emplace_back(uploadBuffer);
 }
 
 void DX12VertexBuffer::bind(size_t offset, size_t size, unsigned int location) {
+	assert(size + offset <= m_byteSize);
+
 	D3D12_VERTEX_BUFFER_VIEW vbView = {};
 	m_vbView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress() + offset;
 	m_vbView.SizeInBytes = size;
 	m_vbView.StrideInBytes = m_vertexSize;
 	m_lastBoundVBSlot = location;
 	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
-	m_renderer->getCommandsList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, &m_vbView);
+	m_renderer->getCmdList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, &m_vbView);
 }
 
 void DX12VertexBuffer::unbind() {
-	m_renderer->getCommandsList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, nullptr);
+	m_renderer->getCmdList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, nullptr);
 }
 
 size_t DX12VertexBuffer::getSize() {
