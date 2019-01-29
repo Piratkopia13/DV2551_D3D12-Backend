@@ -267,9 +267,9 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	//define descriptor range(s)
 	D3D12_DESCRIPTOR_RANGE dtRanges[1];
 	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	dtRanges[0].NumDescriptors = 1; //only one CB in this example
-	dtRanges[0].BaseShaderRegister = 0; //register b0
-	dtRanges[0].RegisterSpace = 0; //register(b0,space0);
+	dtRanges[0].NumDescriptors = 2; // two CBs
+	dtRanges[0].BaseShaderRegister = 0; // register b0 (and b1)
+	dtRanges[0].RegisterSpace = 0; // register (b0,space0) and (b1,space0)
 	dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//create a descriptor table
@@ -281,7 +281,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	D3D12_ROOT_PARAMETER rootParam[1];
 	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParam[0].DescriptorTable = dt;
-	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
