@@ -1,22 +1,29 @@
 #pragma once
-#include <GL/glew.h>
+#include "DX12.h"
 #include "../ConstantBuffer.h"
 
-class DX12ConstantBuffer : public ConstantBuffer
-{
+class DX12Renderer;
+
+class DX12ConstantBuffer : public ConstantBuffer {
 public:
-	DX12ConstantBuffer(std::string NAME, unsigned int location);
+	DX12ConstantBuffer(std::string name, unsigned int location, DX12Renderer* renderer);
 	~DX12ConstantBuffer();
 	void setData(const void* data, size_t size, Material* m, unsigned int location);
 	void bind(Material*);
 
 private:
 
-	std::string name;
-	GLuint location;
+	DX12Renderer* m_renderer;
+
+	wComPtr<ID3D12DescriptorHeap>* m_mainDescriptorHeap;
+	wComPtr<ID3D12Resource> m_constantBufferUploadHeap;
+	UINT8** m_cbGPUAddress;
+	
+	std::string m_name;
+	/*GLuint location;
 	GLuint handle;
 	GLuint index;
 	void* buff = nullptr;
-	void* lastMat;
+	void* lastMat;*/
 };
 

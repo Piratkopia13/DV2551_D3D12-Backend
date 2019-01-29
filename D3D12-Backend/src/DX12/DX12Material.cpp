@@ -30,9 +30,11 @@ std::string DX12Material::expandShaderText(std::string& shaderSource, ShaderType
 	return ss.str();
 };
 
-DX12Material::DX12Material(const std::string& name) {
+DX12Material::DX12Material(const std::string& name, DX12Renderer* renderer)
+	: m_materialName(name)
+	, m_renderer(renderer)
+{
 	isValid = false;
-	m_materialName = name;
 };
 
 DX12Material::~DX12Material() {
@@ -65,12 +67,12 @@ void DX12Material::setShader(const std::string& shaderFileName, ShaderType type)
 
 // this constant buffer will be bound every time we bind the material
 void DX12Material::addConstantBuffer(std::string name, unsigned int location) {
-	//constantBuffers[location] = new ConstantBufferGL(name, location);
+	m_constantBuffers[location] = new DX12ConstantBuffer(name, location, m_renderer);
 }
 
 // location identifies the constant buffer in a unique way
 void DX12Material::updateConstantBuffer(const void* data, size_t size, unsigned int location) {
-	//constantBuffers[location]->setData(data, size, this, location);
+	m_constantBuffers[location]->setData(data, size, this, location);
 }
 
 void DX12Material::removeShader(ShaderType type) {
@@ -193,9 +195,9 @@ int DX12Material::enable() {
 
 	//glUseProgram(program);
 
-	/*for (auto cb : constantBuffers) {
+	for (auto cb : m_constantBuffers) {
 		cb.second->bind(this);
-	}*/
+	}
 
 	return 0;
 };
@@ -203,12 +205,3 @@ int DX12Material::enable() {
 void DX12Material::disable() {
 	//glUseProgram(0);
 };
-
-//int DX12Material::updateAttribute(
-//	ShaderType type,
-//	std::string &attribName,
-//	void* data,
-//	unsigned int size)
-//{
-//	return 0;
-//}

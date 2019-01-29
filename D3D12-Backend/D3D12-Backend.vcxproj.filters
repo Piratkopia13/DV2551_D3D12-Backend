@@ -90,6 +90,9 @@
     <ClInclude Include="src\DX12\DX12Technique.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\DX12\DX12ConstantBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp">
@@ -159,6 +162,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DX12\DX12Technique.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DX12\DX12ConstantBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

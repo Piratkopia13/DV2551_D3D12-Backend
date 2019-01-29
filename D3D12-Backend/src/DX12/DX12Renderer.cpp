@@ -19,7 +19,9 @@ DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
 	, m_fenceValue(0)
 	, m_eventHandle(nullptr)
-	, m_globalWireframeMode(false) {
+	, m_globalWireframeMode(false) 
+	, m_frameIndex(0)
+{
 }
 
 DX12Renderer::~DX12Renderer() {
@@ -59,24 +61,32 @@ std::string DX12Renderer::getShaderExtension() {
 	return std::string(".hlsl");
 }
 
-ID3D12Device4 * DX12Renderer::getDevice() {
+ID3D12Device4 * DX12Renderer::getDevice() const {
 	return m_device.Get();
 }
 
-ID3D12CommandQueue * DX12Renderer::getCmdQueue() {
+ID3D12CommandQueue * DX12Renderer::getCmdQueue() const {
 	return m_commandQueue.Get();
 }
 
-ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList() {
+ID3D12GraphicsCommandList3 * DX12Renderer::getCmdList() const {
 	return m_commandList.Get();
 }
 
-ID3D12RootSignature * DX12Renderer::getRootSignature() {
+ID3D12RootSignature * DX12Renderer::getRootSignature() const {
 	return m_rootSignature.Get();
 }
 
-ID3D12CommandAllocator * DX12Renderer::getCmdAllocator() {
+ID3D12CommandAllocator * DX12Renderer::getCmdAllocator() const {
 	return m_commandAllocator.Get();
+}
+
+UINT DX12Renderer::getNumSwapBuffers() const {
+	return NUM_SWAP_BUFFERS;
+}
+
+UINT DX12Renderer::getFrameIndex() const {
+	return m_frameIndex;
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
@@ -86,7 +96,7 @@ VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USA
 };
 
 Material* DX12Renderer::makeMaterial(const std::string& name) {
-	return new DX12Material(name);
+	return new DX12Material(name, this);
 }
 
 Technique* DX12Renderer::makeTechnique(Material* m, RenderState* r) {
@@ -275,7 +285,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	dt.pDescriptorRanges = dtRanges;
 
 	//create root parameter
-	D3D12_ROOT_PARAMETER  rootParam[1];
+	D3D12_ROOT_PARAMETER rootParam[1];
 	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParam[0].DescriptorTable = dt;
 	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -363,10 +373,12 @@ void DX12Renderer::frame() {
 	//	}
 	//	drawList2.clear();
 	//}
+
 };
 
 void DX12Renderer::present() {
 	//SDL_GL_SwapWindow(window);
+	m_frameIndex = (m_frameIndex + 1) % NUM_SWAP_BUFFERS;
 }
 
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {
