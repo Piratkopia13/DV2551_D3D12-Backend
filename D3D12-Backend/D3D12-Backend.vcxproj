@@ -174,6 +174,16 @@
     <ClInclude Include="src\IA.h" />
     <ClInclude Include="src\Material.h" />
     <ClInclude Include="src\Mesh.h" />
+    <ClInclude Include="src\OpenGL\ConstantBufferGL.h" />
+    <ClInclude Include="src\OpenGL\MaterialGL.h" />
+    <ClInclude Include="src\OpenGL\MeshGL.h" />
+    <ClInclude Include="src\OpenGL\OpenGLRenderer.h" />
+    <ClInclude Include="src\OpenGL\RenderStateGL.h" />
+    <ClInclude Include="src\OpenGL\ResourceBindingGL.h" />
+    <ClInclude Include="src\OpenGL\Sampler2DGL.h" />
+    <ClInclude Include="src\OpenGL\Texture2DGL.h" />
+    <ClInclude Include="src\OpenGL\TransformGL.h" />
+    <ClInclude Include="src\OpenGL\VertexBufferGL.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\RenderState.h" />
@@ -201,6 +211,16 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\OpenGL\ConstantBufferGL.cpp" />
+    <ClCompile Include="src\OpenGL\MaterialGL.cpp" />
+    <ClCompile Include="src\OpenGL\MeshGL.cpp" />
+    <ClCompile Include="src\OpenGL\OpenGLRenderer.cpp" />
+    <ClCompile Include="src\OpenGL\RenderStateGL.cpp" />
+    <ClCompile Include="src\OpenGL\ResourceBindingGL.cpp" />
+    <ClCompile Include="src\OpenGL\Sampler2DGL.cpp" />
+    <ClCompile Include="src\OpenGL\Texture2DGL.cpp" />
+    <ClCompile Include="src\OpenGL\TransformGL.cpp" />
+    <ClCompile Include="src\OpenGL\VertexBufferGL.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

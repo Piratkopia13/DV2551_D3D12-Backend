@@ -1,6 +1,6 @@
 #include "Texture2DGL.h"
 
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 Texture2DGL::Texture2DGL() {}

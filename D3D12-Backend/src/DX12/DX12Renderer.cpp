@@ -346,11 +346,11 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
  TODO.
 */
 
-int perMat = 1;
+//int perMat = 1;
 void DX12Renderer::submit(Mesh* mesh) {
-	if (perMat) {
+	//if (perMat) {
 		drawList2[(DX12Technique*)mesh->technique].push_back((DX12Mesh*)mesh);
-	}/* else
+	/*} else
 		drawList.push_back(mesh);*/
 };
 
