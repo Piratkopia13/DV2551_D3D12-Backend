@@ -62,6 +62,7 @@ private:
 	std::unique_ptr<Win32Window> m_window;
 	bool m_globalWireframeMode;
 	float m_clearColor[4];
+	bool m_firstFrame;
 	
 	static const UINT NUM_SWAP_BUFFERS = 2;
 	UINT m_frameIndex;

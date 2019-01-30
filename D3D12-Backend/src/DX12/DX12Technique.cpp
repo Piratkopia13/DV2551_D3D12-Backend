@@ -58,7 +58,7 @@ void DX12Technique::enable(Renderer* renderer) {
 
 	DX12Renderer* dxRenderer = static_cast<DX12Renderer*>(renderer);
 
-	dxRenderer->getCmdList()->Reset(dxRenderer->getCmdAllocator(), m_pipelineState.Get());
+	//dxRenderer->getCmdList()->Reset(dxRenderer->getCmdAllocator(), m_pipelineState.Get());
 }
 
 ID3D12PipelineState* DX12Technique::getPipelineState() const {

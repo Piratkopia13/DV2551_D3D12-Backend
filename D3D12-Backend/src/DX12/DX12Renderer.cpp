@@ -17,6 +17,7 @@ DX12Renderer::DX12Renderer()
 	, m_eventHandle(nullptr)
 	, m_globalWireframeMode(false) 
 	, m_frameIndex(0)
+	, m_firstFrame(true)
 {
 }
 
@@ -147,7 +148,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	IDXGIFactory6* factory = nullptr;
 	IDXGIAdapter1* adapter = nullptr;
 	//First a factory is created to iterate through the adapters available.
-	CreateDXGIFactory(IID_PPV_ARGS(&factory));
+	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&factory)));
 	for (UINT adapterIndex = 0;; ++adapterIndex) {
 		adapter = nullptr;
 		if (DXGI_ERROR_NOT_FOUND == factory->EnumAdapters1(adapterIndex, &adapter)) {
@@ -186,12 +187,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	// Create allocator
 	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 	// Create command list
-	m_device->CreateCommandList(
-		0,
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		m_commandAllocator.Get(),
-		nullptr,
-		IID_PPV_ARGS(&m_commandList));
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList)));
 
 	//Command lists are created in the recording state. Since there is nothing to
 	//record right now and the main loop expects it to be closed, we close it.
@@ -295,6 +291,10 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	ThrowIfFailed(m_device->CreateRootSignature(0, sBlob->GetBufferPointer(), sBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
 
 
+	// Reset the command list to prep for initialization commands.
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
+
 	// Other classes
 	{
 		// 10. Create pipeline state
@@ -329,10 +329,45 @@ void DX12Renderer::submit(Mesh* mesh) {
 */
 void DX12Renderer::frame() {
 
+	if(m_firstFrame) {
+		//Execute the initialization command list
+		ThrowIfFailed(m_commandList->Close());
+		ID3D12CommandList* listsToExecute[] = { m_commandList.Get() };
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+
+		waitForGPU(); //Wait for GPU to finish.
+		m_firstFrame = false;
+	}
+
 	// Command list allocators can only be reset when the associated command lists have
 	// finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
 	m_commandAllocator->Reset();
-	
+
+	//if (perMat != 1) {
+
+	//	//for (auto mesh : drawList) {
+	//	//	mesh->technique->enable(this);
+	//	//	size_t numberElements = mesh->geometryBuffers[0].numElements;
+	//	//	//glBindTexture(GL_TEXTURE_2D, 0);
+	//	//	for (auto t : mesh->textures) {
+	//	//		// we do not really know here if the sampler has been
+	//	//		// defined in the shader.
+	//	//		t.second->bind(t.first);
+	//	//	}
+	//	//	for (auto element : mesh->geometryBuffers) {
+	//	//		mesh->bindIAVertexBuffer(element.first);
+	//	//	}
+	//	//	mesh->txBuffer->bind(mesh->technique->getMaterial());
+	//	//	//glDrawArrays(GL_TRIANGLES, 0, numberElements);
+	//	//}
+	//	//drawList.clear();
+	//} else {
+	//	for (auto work : drawList2) {
+
+	auto work = *drawList2.begin();
+
+	m_commandList->Reset(m_commandAllocator.Get(), work.first->getPipelineState());
+
 	// Indicate that the back buffer will be used as render target.
 	D3D12_RESOURCE_BARRIER barrierDesc = {};
 	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -351,75 +386,51 @@ void DX12Renderer::frame() {
 
 	m_commandList->ClearRenderTargetView(cdh, m_clearColor, 0, nullptr);
 
+		// Set root signature
+		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+		// Enable the technique
+		work.first->enable(this);
 
-	if (perMat != 1) {
-
-		//for (auto mesh : drawList) {
-		//	mesh->technique->enable(this);
-		//	size_t numberElements = mesh->geometryBuffers[0].numElements;
-		//	//glBindTexture(GL_TEXTURE_2D, 0);
-		//	for (auto t : mesh->textures) {
-		//		// we do not really know here if the sampler has been
-		//		// defined in the shader.
-		//		t.second->bind(t.first);
-		//	}
-		//	for (auto element : mesh->geometryBuffers) {
-		//		mesh->bindIAVertexBuffer(element.first);
-		//	}
-		//	mesh->txBuffer->bind(mesh->technique->getMaterial());
-		//	//glDrawArrays(GL_TRIANGLES, 0, numberElements);
-		//}
-		//drawList.clear();
-	} else {
-		for (auto work : drawList2) {
+		// Set topology
+		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//Set necessary states.
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
 
-			m_commandList->Reset(m_commandAllocator.Get(), work.first->getPipelineState());
-			// Set root signature
-			m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-			// Enable the technique
-			work.first->enable(this);
-
-			// Set topology
-			m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			//Set necessary states.
-			m_commandList->RSSetViewports(1, &m_viewport);
-			m_commandList->RSSetScissorRects(1, &m_scissorRect);
-
-
-			for (auto mesh : work.second) {
-				size_t numberElements = mesh->geometryBuffers[0].numElements;
-				//glBindTexture(GL_TEXTURE_2D, 0);
-				for (auto t : mesh->textures) {
-					// we do not really know here if the sampler has been
-					// defined in the shader.
-					t.second->bind(t.first);
-				}
-
-				for (auto element : mesh->geometryBuffers) {
-					mesh->bindIAVertexBuffer(element.first);
-				}
-				//mesh->txBuffer->bind(work.first->getMaterial());
-				m_commandList->DrawInstanced(numberElements, 1, 0, 0);
-				//glDrawArrays(GL_TRIANGLES, 0, numberElements);
+		for (auto mesh : work.second) {
+			size_t numberElements = mesh->geometryBuffers[0].numElements;
+			//glBindTexture(GL_TEXTURE_2D, 0);
+			for (auto t : mesh->textures) {
+				// we do not really know here if the sampler has been
+				// defined in the shader.
+				t.second->bind(t.first);
 			}
 
-			//Indicate that the back buffer will now be used to present.
-			barrierDesc = {};
-			barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
-			barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-			m_commandList->ResourceBarrier(1, &barrierDesc);
-
-			//Close the list to prepare it for execution.
-			m_commandList->Close();
-
-
+			for (auto element : mesh->geometryBuffers) {
+				mesh->bindIAVertexBuffer(element.first);
+			}
+			//mesh->txBuffer->bind(work.first->getMaterial());
+			m_commandList->DrawInstanced(numberElements, 1, 0, 0);
+			//glDrawArrays(GL_TRIANGLES, 0, numberElements);
 		}
+
+		//Indicate that the back buffer will now be used to present.
+		barrierDesc = {};
+		barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
+		barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		m_commandList->ResourceBarrier(1, &barrierDesc);
+
+		//Close the list to prepare it for execution.
+		m_commandList->Close();
+
+
+		//}
 		drawList2.clear();
-	}
+	//}
 
 
 	//Execute the command list.

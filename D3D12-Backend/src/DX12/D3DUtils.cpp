@@ -82,7 +82,7 @@ void D3DUtils::UpdateDefaultBufferData(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			defaultBuffer,
-			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
 	//ThrowIfFailed(uploadBuffer->Map(0, NULL, reinterpret_cast<void**>(&data)));
