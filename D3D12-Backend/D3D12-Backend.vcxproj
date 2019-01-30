@@ -156,6 +156,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\DX12\DX12ConstantBuffer.h" />
+    <ClInclude Include="src\DX12\DX12Mesh.h" />
     <ClInclude Include="src\DX12\DX12Sampler2D.h" />
     <ClInclude Include="src\DX12\DX12Texture2D.h" />
     <ClInclude Include="src\Camera.h" />
@@ -166,6 +168,8 @@
     <ClInclude Include="src\DX12\DX12Renderer.h" />
     <ClInclude Include="src\DX12\DX12VertexBuffer.h" />
     <ClInclude Include="src\DX12\DX12Material.h" />
+    <ClInclude Include="src\DX12\DX12RenderState.h" />
+    <ClInclude Include="src\DX12\DX12Technique.h" />
     <ClInclude Include="src\DX12\Win32Window.h" />
     <ClInclude Include="src\IA.h" />
     <ClInclude Include="src\Material.h" />
@@ -181,6 +185,8 @@
     <ClInclude Include="src\VertexBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\DX12\DX12ConstantBuffer.cpp" />
+    <ClCompile Include="src\DX12\DX12Mesh.cpp" />
     <ClCompile Include="src\DX12\DX12Sampler2D.cpp" />
     <ClCompile Include="src\DX12\DX12Texture2D.cpp" />
     <ClCompile Include="src\Camera.cpp" />
@@ -189,6 +195,8 @@
     <ClCompile Include="src\DX12\DX12Renderer.cpp" />
     <ClCompile Include="src\DX12\DX12VertexBuffer.cpp" />
     <ClCompile Include="src\DX12\DX12Material.cpp" />
+    <ClCompile Include="src\DX12\DX12RenderState.cpp" />
+    <ClCompile Include="src\DX12\DX12Technique.cpp" />
     <ClCompile Include="src\DX12\Win32Window.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Material.cpp" />

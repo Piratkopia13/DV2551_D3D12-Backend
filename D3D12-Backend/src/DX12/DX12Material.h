@@ -3,46 +3,15 @@
 #include "DX12.h"
 #include <GL/glew.h>
 #include <vector>
-//#include "DX12ConstantBuffer.h"
+#include "DX12ConstantBuffer.h"
 
 class DX12Renderer;
-
-//#define DBOUTW( s )\
-//{\
-//std::wostringstream os_;\
-//os_ << s;\
-//OutputDebugStringW( os_.str().c_str() );\
-//}
-//
-//#define DBOUT( s )\
-//{\
-//std::ostringstream os_;\
-//os_ << s;\
-//OutputDebugString( os_.str().c_str() );\
-//}
-//
-//// use X = {Program or Shader}
-//#define INFO_OUT(S,X) { \
-//char buff[1024];\
-//memset(buff, 0, 1024);\
-//glGet##X##InfoLog(S, 1024, nullptr, buff);\
-//DBOUTW(buff);\
-//}
-//
-//// use X = {Program or Shader}
-//#define COMPILE_LOG(S,X,OUT) { \
-//char buff[1024];\
-//memset(buff, 0, 1024);\
-//glGet##X##InfoLog(S, 1024, nullptr, buff);\
-//OUT=std::string(buff);\
-//}
-
 
 class DX12Material : public Material {
 	friend DX12Renderer;
 
 public:
-	DX12Material(const std::string& name);
+	DX12Material(const std::string& name, DX12Renderer* renderer);
 	~DX12Material();
 
 
@@ -51,19 +20,17 @@ public:
 	int compileMaterial(std::string& errString);
 	int enable();
 	void disable();
-	//GLuint getProgram() { return program; };
 	void setDiffuse(Color c);
 
 	// location identifies the constant buffer in a unique way
 	void updateConstantBuffer(const void* data, size_t size, unsigned int location);
 	// slower version using a string
 	void addConstantBuffer(std::string name, unsigned int location);
-	//std::map<unsigned int, DX12ConstantBuffer*> constantBuffers;
 
 
 	// DX12 specifics
 	ID3DBlob* getShaderBlob(Material::ShaderType type);
-	D3D12_INPUT_LAYOUT_DESC getInputLayoutDesc();
+	D3D12_INPUT_LAYOUT_DESC& getInputLayoutDesc();
 
 private:
 	int compileShader(ShaderType type);
@@ -71,10 +38,15 @@ private:
 
 private:
 	std::string m_materialName;
+	DX12Renderer* m_renderer;
+	std::map<unsigned int, DX12ConstantBuffer*> m_constantBuffers;
+
 	Material::ShaderType m_shaderTypes[4];
 	std::string m_shaderNames[4];
 	// Compiled shader blobs
 	wComPtr<ID3DBlob> m_shaderBlobs[4];
+
+	D3D12_INPUT_ELEMENT_DESC* m_inputElementDesc;
 	D3D12_INPUT_LAYOUT_DESC m_inputLayoutDesc;
 
 };

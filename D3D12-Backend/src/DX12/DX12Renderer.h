@@ -4,8 +4,6 @@
 #include "DX12.h"
 #include "Win32Window.h"
 #include <memory>
-#include <wrl.h>
-#include <d3d12.h>
 #include <dxgi1_6.h> //Only used for initialization of the device and swap chain.
 #include <d3dcompiler.h>
 
@@ -14,15 +12,8 @@
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
-template<class Interface>
-inline void SafeRelease(
-	Interface **ppInterfaceToRelease) {
-	if (*ppInterfaceToRelease != NULL) {
-		(*ppInterfaceToRelease)->Release();
-
-		(*ppInterfaceToRelease) = NULL;
-	}
-}
+class DX12Mesh;
+class DX12Technique;
 
 class DX12Renderer : public Renderer {
 public:
@@ -39,11 +30,16 @@ public:
 	Technique* makeTechnique(Material* m, RenderState* r);
 	Texture2D* makeTexture2D();
 	Sampler2D* makeSampler2D();
+
 	std::string getShaderPath();
 	std::string getShaderExtension();
-	ID3D12Device4* getDevice();
-	ID3D12CommandQueue* getCmdQueue();
-	ID3D12GraphicsCommandList3* getCmdList();
+	ID3D12Device4* getDevice() const;
+	ID3D12CommandQueue* getCmdQueue() const;
+	ID3D12GraphicsCommandList3* getCmdList() const;
+	ID3D12RootSignature* getRootSignature() const;
+	ID3D12CommandAllocator* getCmdAllocator() const;
+	UINT getNumSwapBuffers() const;
+	UINT getFrameIndex() const;
 
 	int initialize(unsigned int width = 640, unsigned int height = 480);
 	void setWinTitle(const char* title);
@@ -56,16 +52,20 @@ public:
 	void submit(Mesh* mesh);
 	void frame();
 	void present();
-
 	
+	void waitForGPU();
 
 protected:
 	
 
 private:
 	std::unique_ptr<Win32Window> m_window;
+	bool m_globalWireframeMode;
+	float m_clearColor[4];
+	bool m_firstFrame;
 	
 	static const UINT NUM_SWAP_BUFFERS = 2;
+	UINT m_frameIndex;
 
 	// DX12 stuff
 	Microsoft::WRL::ComPtr<ID3D12Device4> m_device;
@@ -91,8 +91,8 @@ private:
 	UINT8* m_pDataCur = nullptr; // Current position of upload buffer
 	UINT8* m_pDataEnd = nullptr; // End position of upload buffer
 
-	std::vector<Mesh*> drawList;
-	std::unordered_map<Technique*, std::vector<Mesh*>> drawList2;
+	//std::vector<Mesh*> drawList;
+	std::unordered_map<DX12Technique*, std::vector<DX12Mesh*>> drawList2;
 
 	//bool globalWireframeMode = false;
 

@@ -10,6 +10,9 @@
 #include "Texture2D.h"
 #include <math.h>
 
+// TODO: REMOVE THIS INCLUDE AND ALL WaitForGPU
+#include "DX12/DX12Renderer.h"
+
 using namespace std;
 Renderer* renderer;
 
@@ -55,7 +58,7 @@ void updateDelta()
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
-constexpr int TOTAL_TRIS = 100.0f;
+constexpr int TOTAL_TRIS = 100;
 // this has to do with how the triangles are spread in the screen, not important.
 constexpr int TOTAL_PLACES = 2 * TOTAL_TRIS;
 float xt[TOTAL_PLACES], yt[TOTAL_PLACES];
@@ -129,7 +132,7 @@ void updateScene()
 
 void renderScene()
 {
-	/*renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
+	renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
 	for (auto m : scene)
 	{
 		renderer->submit(m);
@@ -137,8 +140,8 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	sprintf_s(gTitleBuff, "OpenGL - %3.0lf", gLastDelta);
-	renderer->setWinTitle(gTitleBuff);*/
+	sprintf_s(gTitleBuff, "DX12 - %3.0lf", gLastDelta);
+	renderer->setWinTitle(gTitleBuff);
 	//OutputDebugString(L"RENDER\n");
 
 }
@@ -175,12 +178,13 @@ int initialiseTestbench()
 		   defineTXName + defineDiffCol + defineDiffColName }, 
 	};
 
+
 	float degToRad = M_PI / 180.0;
 	float scale = (float)TOTAL_PLACES / 359.9;
 	for (int a = 0; a < TOTAL_PLACES; a++)
 	{
-		xt[a] = 0.8f * cosf(degToRad * ((float)a/scale) * 3.0);
-		yt[a] = 0.8f * sinf(degToRad * ((float)a/scale) * 2.0);
+		xt[a] = 0.8f * cosf(degToRad * ((float)a/scale) * 3.0f);
+		yt[a] = 0.8f * sinf(degToRad * ((float)a/scale) * 2.0f);
 	};
 
 	// triangle geometry:
@@ -199,53 +203,60 @@ int initialiseTestbench()
 	};
 
 
-	// TEST
-	int i = 0;
-	Material* m = renderer->makeMaterial("material_" + std::to_string(i));
-	m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
-	m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
+	//// TEST
+	//int i = 0;
+	//Material* m = renderer->makeMaterial("material_" + std::to_string(i));
+	//m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
+	//m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
 
-	m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
-	m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
+	//m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
+	//m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
 
-	std::string err;
-	m->compileMaterial(err);
+	//std::string err;
+	//m->compileMaterial(err);
+
+	//// add a constant buffer to the material, to tint every triangle using this material
+	//m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
+	//// no need to update anymore
+	//// when material is bound, this buffer should be also bound for access.
+
+	//m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
+
+	//materials.push_back(m);
 
 
+	for (int i = 0; i < materialDefs.size(); i++)
+	{
+		// set material name from text file?
+		Material* m = renderer->makeMaterial("material_" + std::to_string(i));
+		m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
+		m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
 
+		m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
+		m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
 
-	//for (int i = 0; i < materialDefs.size(); i++)
-	//{
-	//	// set material name from text file?
-	//	Material* m = renderer->makeMaterial("material_" + std::to_string(i));
-	//	m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
-	//	m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
+		std::string err;
+		m->compileMaterial(err);
 
-	//	m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
-	//	m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
+		// add a constant buffer to the material, to tint every triangle using this material
+		m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
+		// no need to update anymore
+		// when material is bound, this buffer should be also bound for access.
 
-	//	std::string err;
-	//	m->compileMaterial(err);
+		m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
+		
+		materials.push_back(m);
+	}
 
-	//	// add a constant buffer to the material, to tint every triangle using this material
-	//	m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
-	//	// no need to update anymore
-	//	// when material is bound, this buffer should be also bound for access.
+	// one technique with wireframe
+	RenderState* renderState1 = renderer->makeRenderState();
+	renderState1->setWireFrame(true);
 
-	//	m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
-	//	
-	//	materials.push_back(m);
-	//}
-
-	//// one technique with wireframe
-	//RenderState* renderState1 = renderer->makeRenderState();
-	//renderState1->setWireFrame(true);
-
-	//// basic technique
-	//techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
-	//techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
-	//techniques.push_back(renderer->makeTechnique(materials[2], renderer->makeRenderState()));
-	//techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));
+	// basic technique
+	techniques.push_back(renderer->makeTechnique(materials[0], renderState1));
+	techniques.push_back(renderer->makeTechnique(materials[1], renderer->makeRenderState()));
+	techniques.push_back(renderer->makeTechnique(materials[2], renderer->makeRenderState()));
+	techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));
 
 	//// create texture
 	//Texture2D* fatboy = renderer->makeTexture2D();
@@ -258,19 +269,19 @@ int initialiseTestbench()
 	//samplers.push_back(sampler);
 
 	//// pre-allocate one single vertex buffer for ALL triangles
-	//pos = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triPos), VertexBuffer::DATA_USAGE::STATIC);
+	pos = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triPos), VertexBuffer::DATA_USAGE::STATIC);
 	//nor = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triNor), VertexBuffer::DATA_USAGE::STATIC);
 	//uvs = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triUV), VertexBuffer::DATA_USAGE::STATIC);
 
 	//// Create a mesh array with 3 basic vertex buffers.
-	//for (int i = 0; i < TOTAL_TRIS; i++) {
+	for (int i = 0; i < TOTAL_TRIS; i++) {
 
-	//	Mesh* m = renderer->makeMesh();
+		Mesh* m = renderer->makeMesh();
 
-	//	constexpr auto numberOfPosElements = std::extent<decltype(triPos)>::value;
-	//	size_t offset = i * sizeof(triPos);
-	//	pos->setData(triPos, sizeof(triPos), offset);
-	//	m->addIAVertexBufferBinding(pos, offset, numberOfPosElements, sizeof(float4), POSITION);
+		constexpr auto numberOfPosElements = std::extent<decltype(triPos)>::value;
+		size_t offset = i * sizeof(triPos);
+		pos->setData(triPos, sizeof(triPos), offset);
+		m->addIAVertexBufferBinding(pos, offset, numberOfPosElements, sizeof(float4), POSITION);
 
 	//	constexpr auto numberOfNorElements = std::extent<decltype(triNor)>::value;
 	//	offset = i * sizeof(triNor);
@@ -282,15 +293,15 @@ int initialiseTestbench()
 	//	uvs->setData(triUV, sizeof(triUV), offset);
 	//	m->addIAVertexBufferBinding(uvs, offset, numberOfUVElements , sizeof(float2), TEXTCOORD);
 
-	//	// we can create a constant buffer outside the material, for example as part of the Mesh.
-	//	m->txBuffer = renderer->makeConstantBuffer(std::string(TRANSLATION_NAME), TRANSLATION);
+		// we can create a constant buffer outside the material, for example as part of the Mesh.
+		m->txBuffer = renderer->makeConstantBuffer(std::string(TRANSLATION_NAME), TRANSLATION);
 	//	
-	//	m->technique = techniques[ i % 4];
-	//	if (i % 4 == 2)
-	//		m->addTexture(textures[0], DIFFUSE_SLOT);
+		m->technique = techniques[ i % techniques.size()];
+		/*if (i % techniques.size() == 2)
+			m->addTexture(textures[0], DIFFUSE_SLOT);*/
 
-	//	scene.push_back(m);
-	//}
+		scene.push_back(m);
+	}
 	return 0;
 }
 
@@ -333,9 +344,14 @@ int main(int argc, char *argv[])
 	renderer = Renderer::makeRenderer(Renderer::BACKEND::DX12);
 	renderer->initialize(800,600);
 	renderer->setWinTitle("DX12");
-	//renderer->setClearColor(0.0, 0.1, 0.1, 1.0);
+	renderer->setClearColor(0.7f, 0.1f, 0.1f, 1.0f);
 	initialiseTestbench();
+
+	static_cast<DX12Renderer*>(renderer)->waitForGPU();
+
 	run();
+
+	static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	//shutdown();
 	return 0;

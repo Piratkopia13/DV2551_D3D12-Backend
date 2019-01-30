@@ -20,7 +20,7 @@ cbuffer DIFFUSE_TINT_NAME : register(b1) {
 	float4 diffuseTint;
 }
 
-VSOut main(VSIn input) {
+VSOut VSMain(VSIn input) {
 	VSOut output = (VSOut)0;
 	output.position = input.position + translate;
 	output.color = input.color;
