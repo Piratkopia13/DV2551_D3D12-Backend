@@ -3,6 +3,7 @@
 #include "DX12.h"
 
 #include "DX12Renderer.h"
+#include "DX12Sampler2D.h"
 
 
 class DX12Texture2D : public Texture2D

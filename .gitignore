@@ -22,6 +22,7 @@
 [Oo]bj/
 [Ll]og/
 Intermediates/
+bin/
 
 # Visual Studio 2015 cache/options directory
 .vs/
