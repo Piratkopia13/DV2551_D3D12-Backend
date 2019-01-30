@@ -107,22 +107,22 @@ void updateScene()
 	/*
 	    For each mesh in scene list, update their position 
 	*/
-	//{
-	//	static long long shift = 0;
-	//	const int size = scene.size();
-	//	for (int i = 0; i < size; i++)
-	//	{
-	//		const float4 trans { 
-	//			xt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
-	//			yt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
-	//			i * (-1.0 / TOTAL_PLACES),
-	//			0.0
-	//		};
-	//		scene[i]->txBuffer->setData(&trans, sizeof(trans), scene[i]->technique->getMaterial(), TRANSLATION);
-	//	}
-	//	// just to make them move...
-	//	shift+=max(TOTAL_TRIS / 1000.0,TOTAL_TRIS / 100.0);
-	//}
+	{
+		static long long shift = 0;
+		const int size = scene.size();
+		for (int i = 0; i < size; i++)
+		{
+			const float4 trans { 
+				xt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
+				yt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
+				i * (-1.0 / TOTAL_PLACES),
+				0.0
+			};
+			scene[i]->txBuffer->setData(&trans, sizeof(trans), scene[i]->technique->getMaterial(), TRANSLATION);
+		}
+		// just to make them move...
+		shift+=max(TOTAL_TRIS / 1000.0,TOTAL_TRIS / 100.0);
+	}
 
 	//OutputDebugString(L"UPDATE\n");
 
@@ -270,8 +270,8 @@ int initialiseTestbench()
 
 	//// pre-allocate one single vertex buffer for ALL triangles
 	pos = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triPos), VertexBuffer::DATA_USAGE::STATIC);
-	//nor = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triNor), VertexBuffer::DATA_USAGE::STATIC);
-	//uvs = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triUV), VertexBuffer::DATA_USAGE::STATIC);
+	nor = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triNor), VertexBuffer::DATA_USAGE::STATIC);
+	uvs = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triUV), VertexBuffer::DATA_USAGE::STATIC);
 
 	//// Create a mesh array with 3 basic vertex buffers.
 	for (int i = 0; i < TOTAL_TRIS; i++) {
@@ -284,19 +284,19 @@ int initialiseTestbench()
 		pos->setData(triPos, sizeof(triPos), offset);
 		m->addIAVertexBufferBinding(pos, offset, numberOfPosElements, sizeof(float4), POSITION);
 
-	//	constexpr auto numberOfNorElements = std::extent<decltype(triNor)>::value;
-	//	offset = i * sizeof(triNor);
-	//	nor->setData(triNor, sizeof(triNor), offset);
-	//	m->addIAVertexBufferBinding(nor, offset, numberOfNorElements, sizeof(float4), NORMAL);
+		constexpr auto numberOfNorElements = std::extent<decltype(triNor)>::value;
+		offset = i * sizeof(triNor);
+		nor->setData(triNor, sizeof(triNor), offset);
+		m->addIAVertexBufferBinding(nor, offset, numberOfNorElements, sizeof(float4), NORMAL);
 
-	//	constexpr auto numberOfUVElements = std::extent<decltype(triUV)>::value;
-	//	offset = i * sizeof(triUV);
-	//	uvs->setData(triUV, sizeof(triUV), offset);
-	//	m->addIAVertexBufferBinding(uvs, offset, numberOfUVElements , sizeof(float2), TEXTCOORD);
+		constexpr auto numberOfUVElements = std::extent<decltype(triUV)>::value;
+		offset = i * sizeof(triUV);
+		uvs->setData(triUV, sizeof(triUV), offset);
+		m->addIAVertexBufferBinding(uvs, offset, numberOfUVElements , sizeof(float2), TEXTCOORD);
 
 		// we can create a constant buffer outside the material, for example as part of the Mesh.
 		m->txBuffer = renderer->makeConstantBuffer(std::string(TRANSLATION_NAME), TRANSLATION);
-	//	
+
 		m->technique = techniques[ i % techniques.size()];
 		/*if (i % techniques.size() == 2)
 			m->addTexture(textures[0], DIFFUSE_SLOT);*/
@@ -345,14 +345,14 @@ int main(int argc, char *argv[])
 	renderer = Renderer::makeRenderer(Renderer::BACKEND::DX12);
 	renderer->initialize(800,600);
 	renderer->setWinTitle("DX12");
-	renderer->setClearColor(0.7f, 0.1f, 0.1f, 1.0f);
+	renderer->setClearColor(0.0f, 0.1f, 0.1f, 1.0f);
 	initialiseTestbench();
 
-	static_cast<DX12Renderer*>(renderer)->waitForGPU();
+	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	run();
 
-	static_cast<DX12Renderer*>(renderer)->waitForGPU();
+	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	//shutdown();
 	return 0;

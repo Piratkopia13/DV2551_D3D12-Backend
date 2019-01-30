@@ -70,6 +70,15 @@ void DX12Material::addConstantBuffer(std::string name, unsigned int location) {
 	m_constantBuffers[location] = new DX12ConstantBuffer(name, location, m_renderer);
 }
 
+std::vector<DX12ConstantBuffer*> DX12Material::getConstantBuffers() const {
+	std::vector<DX12ConstantBuffer*> cbuffers;
+
+	for (auto buffer : m_constantBuffers)
+		cbuffers.push_back(buffer.second);
+
+	return cbuffers;
+}
+
 // location identifies the constant buffer in a unique way
 void DX12Material::updateConstantBuffer(const void* data, size_t size, unsigned int location) {
 	m_constantBuffers[location]->setData(data, size, this, location);
@@ -180,12 +189,11 @@ int DX12Material::compileMaterial(std::string& errString) {
 	compileShader(ShaderType::PS);
 
 	////// Input Layout //////
-	const unsigned int NUM_ELEMS = 1;
+	const unsigned int NUM_ELEMS = 3;
 	m_inputElementDesc = new D3D12_INPUT_ELEMENT_DESC[NUM_ELEMS];
 	m_inputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	/*m_inputElementDesc[1] = { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,	 0, D3D12_APPEND_ALIGNED_ELEMENT,								D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	m_inputElementDesc[2] = { "COLOR"	, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	m_inputElementDesc[3] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,		 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };*/
+	m_inputElementDesc[1] = { "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	m_inputElementDesc[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,		 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	m_inputLayoutDesc.pInputElementDescs = m_inputElementDesc;
 	m_inputLayoutDesc.NumElements = NUM_ELEMS;

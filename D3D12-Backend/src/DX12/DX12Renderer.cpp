@@ -19,10 +19,14 @@ DX12Renderer::DX12Renderer()
 	, m_globalWireframeMode(false) 
 	, m_frameIndex(0)
 	, m_firstFrame(true)
+	//, m_numCbvSrvUavDescriptors(0)
+	////, m_numSamplerDescriptors(0)
+	//, m_cbvSrvUavDescriptorHeap(nullptr)
 {
 }
 
 DX12Renderer::~DX12Renderer() {
+	//delete[] m_cbvSrvUavDescriptorHeap;
 }
 
 int DX12Renderer::shutdown() {
@@ -140,6 +144,8 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 		//Logger::Error("Failed to initialize Win32Window!");
 		return 1;
 	}
+
+	//m_cbvSrvUavDescriptorHeap = new wComPtr<ID3D12DescriptorHeap>[getNumSwapBuffers()];
 
 	// 1. Find comlient adapter
 
@@ -261,23 +267,42 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	// 8. Create root signature
 
 	//define descriptor range(s)
-	D3D12_DESCRIPTOR_RANGE dtRanges[1];
-	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	dtRanges[0].NumDescriptors = 2; // two CBs
-	dtRanges[0].BaseShaderRegister = 0; // register b0 (and b1)
-	dtRanges[0].RegisterSpace = 0; // register (b0,space0) and (b1,space0)
-	dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	//D3D12_DESCRIPTOR_RANGE dtRanges[1];
+	//dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	//dtRanges[0].NumDescriptors = 1; // two CBs
+	//dtRanges[0].BaseShaderRegister = 5; // register bX
+	//dtRanges[0].RegisterSpace = 0; // register (bX,spaceY)
+	//dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	//create a descriptor table
-	D3D12_ROOT_DESCRIPTOR_TABLE dt;
-	dt.NumDescriptorRanges = ARRAYSIZE(dtRanges);
-	dt.pDescriptorRanges = dtRanges;
+	//D3D12_DESCRIPTOR_RANGE dtRanges2[1];
+	//dtRanges2[0] = dtRanges[0];
+	//dtRanges2[0].BaseShaderRegister = 6; // register bX
+
+	////create a descriptor table
+	//D3D12_ROOT_DESCRIPTOR_TABLE dt;
+	//dt.NumDescriptorRanges = ARRAYSIZE(dtRanges);
+	//dt.pDescriptorRanges = dtRanges;
+
+	////create a descriptor table
+	//D3D12_ROOT_DESCRIPTOR_TABLE dt2;
+	//dt2.NumDescriptorRanges = ARRAYSIZE(dtRanges2);
+	//dt2.pDescriptorRanges = dtRanges2;
+
+	D3D12_ROOT_DESCRIPTOR de = {};
+	de.ShaderRegister = 5;
+	de.RegisterSpace = 0;
+	D3D12_ROOT_DESCRIPTOR de2 = {};
+	de2.ShaderRegister = 6;
+	de2.RegisterSpace = 0;
 
 	//create root parameter
-	D3D12_ROOT_PARAMETER rootParam[1];
-	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParam[0].DescriptorTable = dt;
+	D3D12_ROOT_PARAMETER rootParam[2];
+	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParam[0].Descriptor = de;
 	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParam[1].Descriptor = de2;
+	rootParam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -287,7 +312,12 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	rsDesc.pStaticSamplers = nullptr;
 
 	ID3DBlob* sBlob;
-	ThrowIfFailed(D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &sBlob, nullptr));
+	ID3DBlob* errorBlob;
+	HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &sBlob, &errorBlob);
+	if (FAILED(hr)) {
+		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		ThrowIfFailed(hr);
+	}
 	ThrowIfFailed(m_device->CreateRootSignature(0, sBlob->GetBufferPointer(), sBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
 
 
@@ -335,6 +365,23 @@ void DX12Renderer::frame() {
 		ID3D12CommandList* listsToExecute[] = { m_commandList.Get() };
 		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
 
+		//for (UINT i = 0; i < getNumSwapBuffers(); ++i) {
+		//	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		//	heapDesc.NumDescriptors = m_numCbvSrvUavDescriptors;
+		//	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		//	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		//	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_cbvSrvUavDescriptorHeap[i])));
+
+
+		//	// Create a constant buffer view which descriped the buffer and contains a pointer to the memory where the data resides
+		//	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		//	cbvDesc.BufferLocation = m_constantBufferUploadHeap->GetGPUVirtualAddress();
+		//	cbvDesc.SizeInBytes = (size + 255) & ~255; // Required 256-byte alignment
+		//	m_renderer->getDevice()->CreateConstantBufferView(&cbvDesc, m_mainDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
+
+
+		//}
+
 		waitForGPU(); //Wait for GPU to finish.
 		m_firstFrame = false;
 	}
@@ -364,9 +411,10 @@ void DX12Renderer::frame() {
 	//} else {
 	//	for (auto work : drawList2) {
 
-	auto work = *drawList2.begin();
+	//auto work = *drawList2.begin();
 
-	m_commandList->Reset(m_commandAllocator.Get(), work.first->getPipelineState());
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+	
 
 	// Indicate that the back buffer will be used as render target.
 	D3D12_RESOURCE_BARRIER barrierDesc = {};
@@ -386,10 +434,18 @@ void DX12Renderer::frame() {
 
 	m_commandList->ClearRenderTargetView(cdh, m_clearColor, 0, nullptr);
 
-		// Set root signature
-		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+	// Set root signature
+	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+
+	for (auto work : drawList2) {
+
+		// Set pipeline
+		// TODO: only do this when neccesary
+		m_commandList->SetPipelineState(work.first->getPipelineState());
+
 		// Enable the technique
-		work.first->enable(this);
+		// This binds constant buffers
+		work.first->enable(this); 
 
 		// Set topology
 		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -413,26 +469,29 @@ void DX12Renderer::frame() {
 				//mesh->bindIAVertexBuffer(mesh->geometryBuffers.begin()->first);
 				//mesh->geometryBuffers.begin()->second.buffer->bind(0, 48, 0);
 			}
+			// Bind translation constant buffer
+			mesh->txBuffer->bind(work.first->getMaterial());
+			// Draw
 			m_commandList->DrawInstanced(numberElements, 1, 0, 0);
-			//mesh->txBuffer->bind(work.first->getMaterial());
 		}
 
-		//Indicate that the back buffer will now be used to present.
-		barrierDesc = {};
-		barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
-		barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		m_commandList->ResourceBarrier(1, &barrierDesc);
-
-		//Close the list to prepare it for execution.
-		m_commandList->Close();
-
-
-		//}
-		drawList2.clear();
+	}
+	drawList2.clear();
 	//}
+
+	// Indicate that the back buffer will now be used to present
+	barrierDesc = {};
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	m_commandList->ResourceBarrier(1, &barrierDesc);
+
+	//Close the list to prepare it for execution.
+	m_commandList->Close();
+
+
 
 
 	//Execute the command list.
@@ -450,6 +509,10 @@ void DX12Renderer::present() {
 	waitForGPU(); //Wait for GPU to finish.
 				  //NOT BEST PRACTICE, only used as such for simplicity.
 }
+
+//void DX12Renderer::addCbvSrvUavDescriptor() {
+//	m_numCbvSrvUavDescriptors += 1;
+//}
 
 void DX12Renderer::waitForGPU() {
 	//WAITING FOR EACH FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.

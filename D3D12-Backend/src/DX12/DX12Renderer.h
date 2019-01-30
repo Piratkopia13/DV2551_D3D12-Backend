@@ -53,6 +53,9 @@ public:
 	void frame();
 	void present();
 	
+	//void addCbvSrvUavDescriptor();
+	//void addSamplerDescriptor();
+
 	void waitForGPU();
 
 protected:
@@ -77,6 +80,12 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 	Microsoft::WRL::ComPtr<ID3D12Resource1> m_renderTargets[NUM_SWAP_BUFFERS];
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
+
+	//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* m_cbvSrvUavDescriptorHeap;
+	//int m_numCbvSrvUavDescriptors;
+	/*Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* m_samplerDescriptorHeap;
+	int m_numSamplerDescriptors;*/
+	
 	UINT m_renderTargetDescriptorSize;
 	UINT64 m_fenceValue;
 	D3D12_VIEWPORT m_viewport;

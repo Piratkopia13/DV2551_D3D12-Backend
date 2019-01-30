@@ -27,6 +27,8 @@ public:
 	// slower version using a string
 	void addConstantBuffer(std::string name, unsigned int location);
 
+	std::vector<DX12ConstantBuffer*> getConstantBuffers() const;
+
 
 	// DX12 specifics
 	ID3DBlob* getShaderBlob(Material::ShaderType type);

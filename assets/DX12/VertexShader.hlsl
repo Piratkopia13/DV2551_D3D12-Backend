@@ -1,37 +1,35 @@
 struct VSIn {
 	float4 position : POSITION0;
-	// float4 normal 	: NORMAL0;
-	// float4 color	: COLOR0;
-	// float2 texCoord : TEXCOORD0;
+	float4 normal 	: NORMAL0;
+	float2 texCoord : TEXCOORD0;
 };
 
 struct VSOut {
 	float4 position : SV_POSITION;
-	// float4 normal 	: NORMAL0;
-	// float4 color	: COLOR0;
-	// float2 texCoord : TEXCOORD0;
+	float4 normal 	: NORMAL0;
+	float2 texCoord : TEXCOORD0;
 };
 
-cbuffer TRANSLATION_NAME : register(b0) {
+cbuffer TRANSLATION_NAME : register(b5) {
 	float4 translate;
 }
 
-cbuffer DIFFUSE_TINT_NAME : register(b1) {
-	float4 diffuseTint;
-}
+// cbuffer DIFFUSE_TINT_NAME : register(b1) {
+// 	float4 diffuseTint;
+// }
 
 VSOut VSMain(VSIn input) {
 	VSOut output = (VSOut)0;
+	// output.position = input.position;
 	output.position = input.position + translate;
-	// output.color = input.color;
 
-	// #ifdef NORMAL
-	 	// output.normal = input.normal;
-	// #endif
+	#ifdef NORMAL
+	 	output.normal = input.normal;
+	#endif
 
-	// #ifdef TEXTCOORD
-	 	// output.texCoord = input.texCoord;
-	// #endif
+	#ifdef TEXTCOORD
+	 	output.texCoord = input.texCoord;
+	 #endif
 
 	return output;
 }
