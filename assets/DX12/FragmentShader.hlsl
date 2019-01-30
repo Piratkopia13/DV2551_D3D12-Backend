@@ -1,3 +1,4 @@
+#define MERGE(a, b) a##b
 struct VSOut {
 	float4 position : SV_POSITION;
 	float4 normal 	: NORMAL0;
@@ -7,7 +8,7 @@ struct VSOut {
 // Texture2D tex : register(t0);
 // SamplerState ss : register(s0);
 
-cbuffer DIFFUSE_TINT_NAME : register(b6) {
+cbuffer DIFFUSE_TINT_NAME : register(MERGE(b, DIFFUSE_TINT)) {
 	float4 diffuseTint;
 }
 

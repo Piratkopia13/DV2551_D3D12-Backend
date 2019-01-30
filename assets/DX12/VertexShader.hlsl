@@ -1,3 +1,4 @@
+#define MERGE(a, b) a##b
 struct VSIn {
 	float4 position : POSITION0;
 	float4 normal 	: NORMAL0;
@@ -10,7 +11,7 @@ struct VSOut {
 	float2 texCoord : TEXCOORD0;
 };
 
-cbuffer TRANSLATION_NAME : register(b5) {
+cbuffer TRANSLATION_NAME : register(MERGE(b, TRANSLATION)) {
 	float4 translate;
 }
 
