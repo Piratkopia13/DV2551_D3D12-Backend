@@ -17,8 +17,6 @@ DX12Texture2D::~DX12Texture2D() {
 // else return -1
 int DX12Texture2D::loadFromFile(std::string filename) {
 	
-	//DXGI_FORMAT_R8G8B8A8_UNORM
-
 	int w, h, bpp;
 	unsigned char* rgba = stbi_load(filename.c_str(), &w, &h, &bpp, STBI_rgb_alpha);
 	if (rgba == nullptr) {
