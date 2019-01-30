@@ -14,10 +14,11 @@ public:
 
 	int loadFromFile(std::string filename);
 	void bind(unsigned int slot);
-	Sampler2D* sampler = nullptr;
+
+private:
 	DX12Renderer * renderer;
 
-	//DX HANDLE
+
 	ID3D12Resource* textureBuffer;
 	ID3D12DescriptorHeap* mainDescriptorHeap;
 	ID3D12Resource* textureBufferUploadHeap;

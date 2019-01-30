@@ -30,7 +30,7 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 		1,
 		1,
 		DXGI_FORMAT_R8G8B8A8_UINT,
-		{},											//WAT IS DIS
+		{},											
 		D3D12_TEXTURE_LAYOUT_UNKNOWN,
 		D3D12_RESOURCE_FLAG_NONE
 	};
@@ -40,7 +40,7 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 
 	// create a default heap where the upload heap will copy its contents into (contents being the texture)
 	HRESULT hr = renderer->getDevice()->CreateCommittedResource(
-		0,///&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), // a default heap
 		D3D12_HEAP_FLAG_NONE, // no flags
 		&textureDesc, // the description of our texture
 		D3D12_RESOURCE_STATE_COPY_DEST, // We will copy the texture from the upload heap to here, so we start it out in a copy dest state
@@ -72,14 +72,14 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 
 	// store vertex buffer in upload heap
 	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = &rgba[0]; // pointer to our image data
+	textureData.pData = rgba; // pointer to our image data
 	textureData.RowPitch = w; /// size of all our triangle vertex data
 	textureData.SlicePitch = w * textureDesc.Height; /// also the size of our triangle vertex data
 
 	// Now we copy the upload buffer contents to the default heap
 	
 	
-	///UpdateSubresources(commandList, textureBuffer, textureBufferUploadHeap, 0, 0, 1, &textureData);
+	UpdateSubresources(renderer->getCmdList(), textureBuffer, textureBufferUploadHeap, 0, 0, 1, &textureData);
 	
 	// transition the texture default heap to a pixel shader resource (we will be sampling from this heap in the pixel shader to get the color of pixels)
 	renderer->getCmdList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(textureBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -101,24 +101,8 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 	srvDesc.Texture2D.MipLevels = 1;
 	renderer->getDevice()->CreateShaderResourceView(textureBuffer, &srvDesc, mainDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	// Now we execute the command list to upload the initial assets (triangle data)
-	renderer->getCmdList()->Close();
-	ID3D12CommandList* ppCommandLists[] = { renderer->getCmdList() };
-	renderer->getCmdQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-	/// increment the fence value now, otherwise the buffer might not be uploaded by the time we start drawing
-	//fenceValue[frameIndex]++;
-	//hr = commandQueue->Signal(fence[frameIndex], fenceValue[frameIndex]);
-	//if (FAILED(hr))
-	//{
-	//	Running = false;
-	//	return false;
-	//}
-
-	// we are done with image data now that we've uploaded it to the gpu, so free it up
 	delete rgba;
-
-
 	return 0;
 }
 
