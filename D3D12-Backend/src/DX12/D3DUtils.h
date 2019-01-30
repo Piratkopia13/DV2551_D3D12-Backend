@@ -17,7 +17,7 @@ namespace D3DUtils {
 		UINT64 byteSize,
 		UINT64 offset,
 		ID3D12Resource* defaultBuffer,
-		ID3D12Resource* uploadBuffer
+		ID3D12Resource** uploadBuffer
 	);
 
 };

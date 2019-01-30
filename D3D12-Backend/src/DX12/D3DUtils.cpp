@@ -66,7 +66,7 @@ void D3DUtils::UpdateDefaultBufferData(
 	UINT64 byteSize,
 	UINT64 offset,
 	ID3D12Resource* defaultBuffer,
-	ID3D12Resource* uploadBuffer) 
+	ID3D12Resource** uploadBuffer) 
 {
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -74,7 +74,8 @@ void D3DUtils::UpdateDefaultBufferData(
 		&CD3DX12_RESOURCE_DESC::Buffer(byteSize),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&uploadBuffer)));
+		IID_PPV_ARGS(uploadBuffer)));
+	(*uploadBuffer)->SetName(L"Vertex upload heap");
 
 	// Put in barriers in order to schedule for the data to be copied
 	// to the default buffer resource.
@@ -86,14 +87,19 @@ void D3DUtils::UpdateDefaultBufferData(
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
 	//ThrowIfFailed(uploadBuffer->Map(0, NULL, reinterpret_cast<void**>(&data)));
+	//void* dataBegin = nullptr;
+	//D3D12_RANGE range = { 0, 0 }; //We do not intend to read this resource on the CPU.
+	//(*uploadBuffer)->Map(0, &range, &dataBegin);
+	//memcpy(dataBegin, data, byteSize);
+	//(*uploadBuffer)->Unmap(0, nullptr);
 	BYTE* pData;
-	uploadBuffer->Map(0, NULL, reinterpret_cast<void**>(&pData));
+	(*uploadBuffer)->Map(0, NULL, reinterpret_cast<void**>(&pData));
 	memcpy(pData, data, byteSize);
-	uploadBuffer->Unmap(0, NULL);
+	(*uploadBuffer)->Unmap(0, NULL);
 
 	// Helper function to copy CPU memory data into the intermediate
 	//	heap buffer and from that copy the data into the default buffer
-	cmdList->CopyBufferRegion(defaultBuffer, offset, uploadBuffer, 0, byteSize);
+	cmdList->CopyBufferRegion(defaultBuffer, offset, *uploadBuffer, 0, byteSize);
 	
 	cmdList->ResourceBarrier(
 		1,

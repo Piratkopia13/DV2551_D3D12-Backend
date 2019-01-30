@@ -7,11 +7,25 @@
 
 class DX12Renderer;
 
-class DX12VertexBuffer : public VertexBuffer
-{
+class DX12VertexBuffer : public VertexBuffer {
+public:
+	enum DATA_USAGE { STATIC = 0, DYNAMIC = 1, DONTCARE = 2 };
+
+	DX12VertexBuffer(size_t byteSize, VertexBuffer::DATA_USAGE usage, DX12Renderer* renderer);
+	virtual ~DX12VertexBuffer();
+	virtual void setData(const void* data, size_t size, size_t offset);
+	virtual void bind(size_t offset, size_t size, unsigned int location);
+	virtual void unbind();
+	virtual size_t getSize();
+
+	void setVertexSize(size_t size);
+
+	void releaseBufferedObjects(); 
+
 private:
+	VertexBuffer::DATA_USAGE m_usage;
 	//cheap ref counting
-	unsigned int refs = 0;
+	//unsigned int refs = 0;
 
 	wComPtr<ID3D12Resource> m_vertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW m_vbView;
@@ -26,16 +40,5 @@ private:
 
 	DX12Renderer* m_renderer;
 
-public:
-	enum DATA_USAGE { STATIC=0, DYNAMIC=1, DONTCARE=2 };
-
-	DX12VertexBuffer(size_t byteSize, size_t vertexSize, DX12Renderer* device);
-	virtual ~DX12VertexBuffer();
-	virtual void setData(const void* data, size_t size, size_t offset);
-	virtual void bind(size_t offset, size_t size, unsigned int location);
-	virtual void unbind();
-	virtual size_t getSize();
-
-	void releaseBufferedObjects();
 };
 
