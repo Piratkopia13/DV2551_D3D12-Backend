@@ -26,6 +26,7 @@ DX12Renderer::DX12Renderer()
 }
 
 DX12Renderer::~DX12Renderer() {
+	waitForGPU();
 	//delete[] m_cbvSrvUavDescriptorHeap;
 }
 
@@ -472,7 +473,7 @@ void DX12Renderer::frame() {
 			// Bind translation constant buffer
 			mesh->txBuffer->bind(work.first->getMaterial());
 			// Draw
-			m_commandList->DrawInstanced(numberElements, 1, 0, 0);
+			m_commandList->DrawInstanced(static_cast<UINT>(numberElements), 1, 0, 0);
 		}
 
 	}

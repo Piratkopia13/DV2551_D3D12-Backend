@@ -45,8 +45,8 @@ void DX12VertexBuffer::bind(size_t offset, size_t size, unsigned int location) {
 	
 	D3D12_VERTEX_BUFFER_VIEW vbView = {};
 	m_vbView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress() + offset;
-	m_vbView.SizeInBytes = size;
-	m_vbView.StrideInBytes = m_vertexSize;
+	m_vbView.SizeInBytes = static_cast<UINT>(size);
+	m_vbView.StrideInBytes = static_cast<UINT>(m_vertexSize);
 	m_lastBoundVBSlot = location;
 	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
 	m_renderer->getCmdList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, &m_vbView);

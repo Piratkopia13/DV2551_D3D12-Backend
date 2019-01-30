@@ -42,6 +42,7 @@ DX12ConstantBuffer::DX12ConstantBuffer(std::string name, unsigned int location, 
 DX12ConstantBuffer::~DX12ConstantBuffer() {
 
 	//delete[] m_mainDescriptorHeap;
+	delete[] m_constantBufferUploadHeap;
 	delete[] m_cbGPUAddress;
 
 	/*if (handle != 0) {

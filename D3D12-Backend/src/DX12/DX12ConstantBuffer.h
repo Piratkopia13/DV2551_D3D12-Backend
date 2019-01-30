@@ -18,7 +18,7 @@ private:
 	DX12Renderer* m_renderer;
 
 	unsigned int m_location;
-	wComPtr<ID3D12DescriptorHeap>* m_mainDescriptorHeap;
+	//wComPtr<ID3D12DescriptorHeap>* m_mainDescriptorHeap;
 	wComPtr<ID3D12Resource>* m_constantBufferUploadHeap;
 	UINT8** m_cbGPUAddress;
 	
