@@ -1,6 +1,7 @@
 #include "DX12Renderer.h"
 
 #include <stdio.h>
+//#include <pix3.h>
 
 #include "DX12Material.h"
 #include "DX12Mesh.h"
@@ -45,7 +46,6 @@ Sampler2D* DX12Renderer::makeSampler2D() {
 
 ConstantBuffer* DX12Renderer::makeConstantBuffer(std::string NAME, unsigned int location) {
 	return new DX12ConstantBuffer(NAME, location, this);
-	return nullptr;
 }
 
 std::string DX12Renderer::getShaderPath() {
@@ -85,8 +85,7 @@ UINT DX12Renderer::getFrameIndex() const {
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
-	// Temp size
-	return new DX12VertexBuffer(size, sizeof(float) * 8, this);
+	return new DX12VertexBuffer(size, usage, this);
 };
 
 Material* DX12Renderer::makeMaterial(const std::string& name) {
@@ -408,12 +407,14 @@ void DX12Renderer::frame() {
 				t.second->bind(t.first);
 			}
 
+			// Bind vertices, normals and UVs
 			for (auto element : mesh->geometryBuffers) {
 				mesh->bindIAVertexBuffer(element.first);
+				//mesh->bindIAVertexBuffer(mesh->geometryBuffers.begin()->first);
+				//mesh->geometryBuffers.begin()->second.buffer->bind(0, 48, 0);
 			}
-			//mesh->txBuffer->bind(work.first->getMaterial());
 			m_commandList->DrawInstanced(numberElements, 1, 0, 0);
-			//glDrawArrays(GL_TRIANGLES, 0, numberElements);
+			//mesh->txBuffer->bind(work.first->getMaterial());
 		}
 
 		//Indicate that the back buffer will now be used to present.

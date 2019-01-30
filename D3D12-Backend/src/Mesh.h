@@ -29,7 +29,7 @@ public:
 	void addTexture(Texture2D* texture, unsigned int slot);
 
 	// array of buffers with locations (binding points in shaders)
-	void addIAVertexBufferBinding(
+	virtual void addIAVertexBufferBinding(
 		VertexBuffer* buffer, 
 		size_t offset, 
 		size_t numElements, 

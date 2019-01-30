@@ -5,9 +5,11 @@
 #include "DX12Renderer.h"
 #include "D3DUtils.h"
 
-DX12VertexBuffer::DX12VertexBuffer(size_t byteSize, size_t vertexSize, DX12Renderer* renderer) {
-	m_renderer = renderer;
-	m_byteSize = byteSize;
+DX12VertexBuffer::DX12VertexBuffer(size_t byteSize, VertexBuffer::DATA_USAGE usage, DX12Renderer* renderer)
+	: m_renderer(renderer)
+	, m_byteSize(byteSize)
+	, m_usage(usage)
+{
 
 	ThrowIfFailed(m_renderer->getDevice()->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -32,14 +34,15 @@ void DX12VertexBuffer::setData(const void * data, size_t size, size_t offset) {
 
 	ID3D12Resource* uploadBuffer = nullptr;
 	D3DUtils::UpdateDefaultBufferData(m_renderer->getDevice(), m_renderer->getCmdList(),
-		data, size, offset, m_vertexBuffer.Get(), uploadBuffer);
+		data, size, offset, m_vertexBuffer.Get(), &uploadBuffer);
 	// To be released, let renderer handle later
 	m_uploadBuffers.emplace_back(uploadBuffer);
 }
 
 void DX12VertexBuffer::bind(size_t offset, size_t size, unsigned int location) {
 	assert(size + offset <= m_byteSize);
-
+	assert(m_vertexSize > 0);
+	
 	D3D12_VERTEX_BUFFER_VIEW vbView = {};
 	m_vbView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress() + offset;
 	m_vbView.SizeInBytes = size;
@@ -55,6 +58,10 @@ void DX12VertexBuffer::unbind() {
 
 size_t DX12VertexBuffer::getSize() {
 	return m_byteSize;
+}
+
+void DX12VertexBuffer::setVertexSize(size_t size) {
+	m_vertexSize = size;
 }
 
 void DX12VertexBuffer::releaseBufferedObjects() {

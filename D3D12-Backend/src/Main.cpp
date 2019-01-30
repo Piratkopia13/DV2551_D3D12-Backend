@@ -276,6 +276,7 @@ int initialiseTestbench()
 	//// Create a mesh array with 3 basic vertex buffers.
 	for (int i = 0; i < TOTAL_TRIS; i++) {
 
+	//int i = 0;
 		Mesh* m = renderer->makeMesh();
 
 		constexpr auto numberOfPosElements = std::extent<decltype(triPos)>::value;
