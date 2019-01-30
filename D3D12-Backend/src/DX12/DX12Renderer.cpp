@@ -121,12 +121,13 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
 #ifdef _DEBUG
 	//Enable the D3D12 debug layer.
-	ID3D12Debug* debugController = nullptr;
+	ID3D12Debug1* debugController = nullptr;
 
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
+		debugController->SetEnableGPUBasedValidation(true);
 	}
-	SafeRelease(&debugController);
+	//SafeRelease(&debugController);
 #endif
 
 	//GetWindowLong(&hwnd, 0);
