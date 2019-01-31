@@ -145,7 +145,7 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	sprintf_s(gTitleBuff, "DX12 - %3.0lf", gLastDelta);
+	sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
 	renderer->setWinTitle(gTitleBuff);
 	//OutputDebugString(L"RENDER\n");
 
