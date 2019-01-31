@@ -5,8 +5,8 @@ struct VSOut {
 	float2 texCoord : TEXCOORD0;
 };
 
-// Texture2D tex : register(t0);
-// SamplerState ss : register(s0);
+Texture2D tex : register(t0);
+SamplerState ss : register(s0);
 
 cbuffer DIFFUSE_TINT_NAME : register(MERGE(b, DIFFUSE_TINT)) {
 	float4 diffuseTint;
@@ -14,11 +14,11 @@ cbuffer DIFFUSE_TINT_NAME : register(MERGE(b, DIFFUSE_TINT)) {
 
 float4 PSMain(VSOut input) : SV_TARGET0 {
 
-// #ifdef DIFFUSE_SLOT
-//     float4 color = tex.Sample(ss, input.texCoord);
-//  #else
+#ifdef DIFFUSE_SLOT
+    float4 color = tex.Sample(ss, input.texCoord);
+#else
  	float4 color = float4(1.0, 1.0, 1.0, 1.0);
- // #endif
+#endif
 
 	// return float4(0.0, 1.0, 0.0, 1.0);
 	return color * float4(diffuseTint.rgb, 1.0);

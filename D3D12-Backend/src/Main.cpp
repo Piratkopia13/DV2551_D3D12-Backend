@@ -195,7 +195,7 @@ int initialiseTestbench()
 	// triangle geometry:
 	float4 triPos[3] = { { 0.0f,  0.05, 0.0f, 1.0f },{ 0.05, -0.05, 0.0f, 1.0f },{ -0.05, -0.05, 0.0f, 1.0f } };
 	float4 triNor[3] = { { 0.0f,  0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 0.0f } };
-	float2 triUV[3] =  { { 0.5f,  -0.99f },{ 1.49f, 1.1f },{ -0.51, 1.1f } };
+	float2 triUV[3] =  { { 0.5f,  0.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f } };
 
 	// load Materials.
 	std::string shaderPath = renderer->getShaderPath();
@@ -264,14 +264,14 @@ int initialiseTestbench()
 	techniques.push_back(renderer->makeTechnique(materials[3], renderer->makeRenderState()));
 
 	//// create texture
-	//Texture2D* fatboy = renderer->makeTexture2D();
-	//fatboy->loadFromFile("../assets/textures/fatboy.png");
-	//Sampler2D* sampler = renderer->makeSampler2D();
-	//sampler->setWrap(WRAPPING::REPEAT, WRAPPING::REPEAT);
-	//fatboy->sampler = sampler;
+	Texture2D* fatboy = renderer->makeTexture2D();
+	fatboy->loadFromFile("../assets/textures/fatboy.png");
+	Sampler2D* sampler = renderer->makeSampler2D();
+	sampler->setWrap(WRAPPING::REPEAT, WRAPPING::REPEAT);
+	fatboy->sampler = sampler;
 
-	//textures.push_back(fatboy);
-	//samplers.push_back(sampler);
+	textures.push_back(fatboy);
+	samplers.push_back(sampler);
 
 	//// pre-allocate one single vertex buffer for ALL triangles
 	pos = renderer->makeVertexBuffer(TOTAL_TRIS * sizeof(triPos), VertexBuffer::DATA_USAGE::STATIC);
@@ -303,8 +303,8 @@ int initialiseTestbench()
 		m->txBuffer = renderer->makeConstantBuffer(std::string(TRANSLATION_NAME), TRANSLATION);
 
 		m->technique = techniques[ i % techniques.size()];
-		/*if (i % techniques.size() == 2)
-			m->addTexture(textures[0], DIFFUSE_SLOT);*/
+		if (i % techniques.size() == 2)
+			m->addTexture(textures[0], DIFFUSE_SLOT);
 
 		scene.push_back(m);
 	}

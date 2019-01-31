@@ -9,18 +9,18 @@
 class DX12Texture2D : public Texture2D
 {
 public:
-	DX12Texture2D(DX12Renderer * _renderer);
+	DX12Texture2D(DX12Renderer* renderer);
 	~DX12Texture2D();
 
 	int loadFromFile(std::string filename);
 	void bind(unsigned int slot);
 
 private:
-	DX12Renderer * renderer;
+	DX12Renderer* m_renderer;
 
 
-	ID3D12Resource* textureBuffer;
-	ID3D12DescriptorHeap* mainDescriptorHeap;
-	ID3D12Resource* textureBufferUploadHeap;
+	wComPtr<ID3D12Resource> m_textureBuffer;
+	wComPtr<ID3D12DescriptorHeap> m_mainDescriptorHeap;
+	wComPtr<ID3D12Resource> m_textureBufferUploadHeap;
 };
 

@@ -268,21 +268,21 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	// 8. Create root signature
 
 	//define descriptor range(s)
-	//D3D12_DESCRIPTOR_RANGE dtRanges[1];
-	//dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	//dtRanges[0].NumDescriptors = 1; // two CBs
-	//dtRanges[0].BaseShaderRegister = 5; // register bX
-	//dtRanges[0].RegisterSpace = 0; // register (bX,spaceY)
-	//dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	D3D12_DESCRIPTOR_RANGE dtRanges[1];
+	dtRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	dtRanges[0].NumDescriptors = 1;
+	dtRanges[0].BaseShaderRegister = 0; // register bX
+	dtRanges[0].RegisterSpace = 0; // register (bX,spaceY)
+	dtRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//D3D12_DESCRIPTOR_RANGE dtRanges2[1];
 	//dtRanges2[0] = dtRanges[0];
 	//dtRanges2[0].BaseShaderRegister = 6; // register bX
 
-	////create a descriptor table
-	//D3D12_ROOT_DESCRIPTOR_TABLE dt;
-	//dt.NumDescriptorRanges = ARRAYSIZE(dtRanges);
-	//dt.pDescriptorRanges = dtRanges;
+	//create a descriptor table
+	D3D12_ROOT_DESCRIPTOR_TABLE dt;
+	dt.NumDescriptorRanges = ARRAYSIZE(dtRanges);
+	dt.pDescriptorRanges = dtRanges;
 
 	////create a descriptor table
 	//D3D12_ROOT_DESCRIPTOR_TABLE dt2;
@@ -297,20 +297,39 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	de2.RegisterSpace = 0;
 
 	//create root parameter
-	D3D12_ROOT_PARAMETER rootParam[2];
+	D3D12_ROOT_PARAMETER rootParam[3];
 	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[0].Descriptor = de;
 	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[1].Descriptor = de2;
 	rootParam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParam[2].DescriptorTable = dt;
+	rootParam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	// Create static sampler desc
+	D3D12_STATIC_SAMPLER_DESC sampler = {};
+	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler.MipLODBias = 0;
+	sampler.MaxAnisotropy = 0;
+	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+	sampler.MinLOD = 0.0f;
+	sampler.MaxLOD = D3D12_FLOAT32_MAX;
+	sampler.ShaderRegister = 0;
+	sampler.RegisterSpace = 0;
+	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	rsDesc.NumParameters = ARRAYSIZE(rootParam);
 	rsDesc.pParameters = rootParam;
-	rsDesc.NumStaticSamplers = 0;
-	rsDesc.pStaticSamplers = nullptr;
+	rsDesc.NumStaticSamplers = 1;
+	rsDesc.pStaticSamplers = &sampler;
 
 	ID3DBlob* sBlob;
 	ID3DBlob* errorBlob;

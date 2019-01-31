@@ -56,7 +56,7 @@ void DX12Technique::enable(Renderer* renderer) {
 	//renderer->setRenderState(renderState);
 	material->enable();
 
-	DX12Renderer* dxRenderer = static_cast<DX12Renderer*>(renderer);
+	//DX12Renderer* dxRenderer = static_cast<DX12Renderer*>(renderer);
 
 	//dxRenderer->getCmdList()->Reset(dxRenderer->getCmdAllocator(), m_pipelineState.Get());
 }
