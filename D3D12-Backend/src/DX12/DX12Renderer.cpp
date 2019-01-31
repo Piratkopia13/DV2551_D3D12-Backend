@@ -45,7 +45,7 @@ Texture2D* DX12Renderer::makeTexture2D() {
 }
 
 Sampler2D* DX12Renderer::makeSampler2D() {
-	return (Sampler2D*)new DX12Sampler2D();
+	//return (Sampler2D*)new DX12Sampler2D();
 	return nullptr;
 }
 
