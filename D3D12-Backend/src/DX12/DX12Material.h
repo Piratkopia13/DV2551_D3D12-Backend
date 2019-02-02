@@ -15,10 +15,11 @@ public:
 	~DX12Material();
 
 
-	void setShader(const std::string& shaderFileName, ShaderType type);
-	void removeShader(ShaderType type);
-	int compileMaterial(std::string& errString);
-	int enable();
+	virtual void setShader(const std::string& shaderFileName, ShaderType type) override;
+	virtual void removeShader(ShaderType type) override;
+	virtual int compileMaterial(std::string& errString) override;
+	virtual int enable() override;
+	int enable(ID3D12GraphicsCommandList3* cmdList);
 	void disable();
 	void setDiffuse(Color c);
 
@@ -28,7 +29,6 @@ public:
 	void addConstantBuffer(std::string name, unsigned int location);
 
 	std::vector<DX12ConstantBuffer*> getConstantBuffers() const;
-
 
 	// DX12 specifics
 	ID3DBlob* getShaderBlob(Material::ShaderType type);

@@ -97,6 +97,8 @@ int OpenGLRenderer::initialize(unsigned int width, unsigned int height) {
 
 	SDL_GL_MakeCurrent(window, context);
 
+	SDL_GL_SetSwapInterval(0);
+
 	int major, minor;
 	SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
 	SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);

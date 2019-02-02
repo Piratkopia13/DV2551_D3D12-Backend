@@ -18,7 +18,7 @@ DX12Texture2D::~DX12Texture2D() {
 int DX12Texture2D::loadFromFile(std::string filename) {
 	
 	int w, h, bpp;
-	unsigned char* rgba = stbi_load(filename.c_str(), &w, &h, &bpp, STBI_rgb_alpha);
+	unsigned char* rgba = stbi_load(filename.c_str(), &w, &h, &bpp, STBI_rgb_alpha); // TODO: remove rgba memory after copy to gpu is complete
 	if (rgba == nullptr) {
 		return -1;
 	}
@@ -34,6 +34,15 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 		D3D12_TEXTURE_LAYOUT_UNKNOWN,
 		D3D12_RESOURCE_FLAG_NONE
 	};
+
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UINT;
+	textureDesc.DepthOrArraySize = 1;
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureDesc.Width = w;
+	textureDesc.Height = h;
+	textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	textureDesc.MipLevels = 1;
+	textureDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
 	textureDesc.SampleDesc.Count = 1;
 	textureDesc.SampleDesc.Quality = 0;
@@ -108,10 +117,14 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 
 void DX12Texture2D::bind(unsigned int slot) {
 
+	throw std::exception("The texture must be bound using the other bind method taking two parameters");
+
+}
+
+void DX12Texture2D::bind(unsigned int slot, ID3D12GraphicsCommandList3* cmdList) {
 	// set the descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_mainDescriptorHeap.Get() };
-	m_renderer->getCmdList()->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
+	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
 	// TODO: change the 2 to something dynamic
-	m_renderer->getCmdList()->SetGraphicsRootDescriptorTable(2, m_mainDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
+	cmdList->SetGraphicsRootDescriptorTable(2, m_mainDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 }

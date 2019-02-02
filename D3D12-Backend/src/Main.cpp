@@ -47,6 +47,7 @@ void updateDelta()
 	static double avg[WINDOW_SIZE] = { 0.0 };
 	static double lastSum = 10.0;
 	static int loop = 0;
+	static double timeAccumulator = 0.f;
 
 	last = start;
 	//start = SDL_GetPerformanceCounter();
@@ -60,6 +61,13 @@ void updateDelta()
 	avg[loop] = deltaTime;
 	loop = (loop + 1) % WINDOW_SIZE;
 	gLastDelta = (lastSum / WINDOW_SIZE);
+
+	if (timeAccumulator >= 500.0) {
+		timeAccumulator = 0.0;
+		sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
+		renderer->setWinTitle(gTitleBuff);
+	}
+	timeAccumulator += deltaTime;
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
@@ -145,8 +153,8 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
-	renderer->setWinTitle(gTitleBuff);
+	/*sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
+	renderer->setWinTitle(gTitleBuff);*/
 	//OutputDebugString(L"RENDER\n");
 
 }

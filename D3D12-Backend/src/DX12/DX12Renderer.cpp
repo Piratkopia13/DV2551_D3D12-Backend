@@ -1,6 +1,7 @@
 #include "DX12Renderer.h"
 
 #include <stdio.h>
+#include <cassert>
 //#include <pix3.h>
 
 #include "DX12Material.h"
@@ -11,6 +12,9 @@
 #include "DX12ConstantBuffer.h"
 #include "DX12Texture2D.h"
 #include "DX12VertexBuffer.h"
+
+const UINT DX12Renderer::NUM_SWAP_BUFFERS = 2;
+const UINT DX12Renderer::NUM_WORKER_THREADS = 4;
 
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
@@ -23,9 +27,13 @@ DX12Renderer::DX12Renderer()
 	////, m_numSamplerDescriptors(0)
 	//, m_cbvSrvUavDescriptorHeap(nullptr)
 {
+	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 }
 
 DX12Renderer::~DX12Renderer() {
+	//delete[] m_workerCondVars;
+	//delete[] m_workerMutexes;
+	//delete[] m_workersFinished;
 	waitForGPU();
 	//delete[] m_cbvSrvUavDescriptorHeap;
 }
@@ -70,7 +78,9 @@ ID3D12CommandQueue* DX12Renderer::getCmdQueue() const {
 }
 
 ID3D12GraphicsCommandList3* DX12Renderer::getCmdList() const {
-	return m_commandList.Get();
+	assert(m_firstFrame);
+	// Returns the pre command list
+	return m_preCommand.list.Get();
 }
 
 ID3D12RootSignature* DX12Renderer::getRootSignature() const {
@@ -78,7 +88,8 @@ ID3D12RootSignature* DX12Renderer::getRootSignature() const {
 }
 
 ID3D12CommandAllocator* DX12Renderer::getCmdAllocator() const {
-	return m_commandAllocator.Get();
+	// Returns the pre command allocator
+	return m_preCommand.allocator.Get();
 }
 
 UINT DX12Renderer::getNumSwapBuffers() const {
@@ -107,7 +118,6 @@ RenderState* DX12Renderer::makeRenderState() {
 	newRS->setGlobalWireFrame(&m_globalWireframeMode);
 	newRS->setWireFrame(false);
 	return (RenderState*)newRS;
-	return nullptr;
 }
 
 void DX12Renderer::setWinTitle(const char* title) {
@@ -191,14 +201,17 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
 	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
 
-	// Create allocator
-	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
-	// Create command list
-	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList)));
+	// Create allocators
+	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_preCommand.allocator)));
+	ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_postCommand.allocator)));
+	// Create command lists
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_preCommand.allocator.Get(), nullptr, IID_PPV_ARGS(&m_preCommand.list)));
+	ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_postCommand.allocator.Get(), nullptr, IID_PPV_ARGS(&m_postCommand.list)));
 
 	//Command lists are created in the recording state. Since there is nothing to
 	//record right now and the main loop expects it to be closed, we close it.
-	m_commandList->Close();
+	m_preCommand.list->Close();
+	m_postCommand.list->Close();
 
 	// 5. Create swap chain
 	DXGI_SWAP_CHAIN_DESC1 scDesc = {};
@@ -342,20 +355,27 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
 
 	// Reset the command list to prep for initialization commands.
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+	ThrowIfFailed(m_preCommand.list->Reset(m_preCommand.allocator.Get(), nullptr));
 
+	OutputDebugString(L"DX12 Initialized.\n");
 
-	// Other classes
-	{
-		// 10. Create pipeline state
-
-		// 12. Create vertex buffer resources
-
-
-		// 13. Draaaaaaw
+	// Initialize worker threads
+	m_workerThreads.reserve(NUM_WORKER_THREADS);
+	m_runWorkers.resize(NUM_WORKER_THREADS);
+	//m_workerCondVars = new std::condition_variable[m_numWorkers];
+	//m_workerMutexes = new std::mutex[m_numWorkers];
+	//m_workersFinished = new bool[m_numWorkers];
+	m_numWorkersFinished = 0;
+	for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+		// Create command allocator and list
+		m_workerCommands.push_back(Command());
+		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_workerCommands.back().allocator)));
+		ThrowIfFailed(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_workerCommands.back().allocator.Get(), nullptr, IID_PPV_ARGS(&m_workerCommands.back().list)));
+		m_workerCommands.back().list->Close();
+		m_runWorkers[i] = false;
+		// Create thread
+		m_workerThreads.emplace_back(&DX12Renderer::workerThread, this, i);
 	}
-
-	OutputDebugString(L"DID STUFF");
 
 	return 0;
 }
@@ -373,16 +393,211 @@ void DX12Renderer::submit(Mesh* mesh) {
 		drawList.push_back(mesh);*/
 };
 
+void DX12Renderer::workerThread(unsigned int id) {
+
+
+	bool running = true;
+	while (running) {
+		// Wait for event from main thread to begin
+		{
+			/*std::string str = "Worker " + std::to_string(id);
+			str += " waiting..\n";
+			OutputDebugStringA(str.c_str());*/
+			std::unique_lock<std::mutex> mlock(m_mainMutex);
+			m_mainCondVar.wait(mlock, [&]() { return m_runWorkers[id]; });
+			m_runWorkers[id] = false;
+		}
+		auto& allocator = m_workerCommands[id].allocator;
+		auto& list = m_workerCommands[id].list;
+		//OutputDebugStringA("started worker\n");
+		/*std::string str = "Worker " + std::to_string(id);
+		str += " Running!\n";
+		OutputDebugStringA(str.c_str());*/
+		// for number of subtasks
+			// Do rendering task (process part of the submitted meshes)
+
+
+		// Reset
+		allocator->Reset();
+		list->Reset(allocator.Get(), nullptr);
+		
+		list->OMSetRenderTargets(1, &m_cdh, true, nullptr);
+		list->SetGraphicsRootSignature(m_rootSignature.Get());
+
+		// TODO: only iterate through part of the drawList depending on worker id and num workers
+		auto start = drawList2.begin();
+		int load = drawList2.size() / NUM_WORKER_THREADS;
+		std::advance(start, id * load);
+		auto end = start;
+		if (id == NUM_WORKER_THREADS - 1) {
+			end = drawList2.end();
+		} else {
+			std::advance(end, load);
+		}
+		for (auto work = start; work != end; ++work) {
+			// Set pipeline
+			// TODO: only do this when neccesary
+			list->SetPipelineState(work->first->getPipelineState());
+
+
+			// Enable the technique
+			// This binds constant buffers
+			work->first->enable(this, list.Get()); 
+
+			// Set topology
+			list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//Set necessary states.
+			list->RSSetViewports(1, &m_viewport);
+			list->RSSetScissorRects(1, &m_scissorRect);
+
+
+			for (auto mesh : work->second) {
+				size_t numberElements = mesh->geometryBuffers[0].numElements;
+				//glBindTexture(GL_TEXTURE_2D, 0);
+				for (auto t : mesh->textures) {
+					// we do not really know here if the sampler has been
+					// defined in the shader.
+					static_cast<DX12Texture2D*>(t.second)->bind(t.first, list.Get());
+				}
+
+				// Bind vertices, normals and UVs
+				for (auto element : mesh->geometryBuffers) {
+					mesh->bindIAVertexBuffer(element.first, list.Get());
+					//mesh->bindIAVertexBuffer(mesh->geometryBuffers.begin()->first);
+					//mesh->geometryBuffers.begin()->second.buffer->bind(0, 48, 0);
+				}
+				// Bind translation constant buffer
+				static_cast<DX12ConstantBuffer*>(mesh->txBuffer)->bind(work->first->getMaterial(), list.Get());
+				// Draw
+				list->DrawInstanced(static_cast<UINT>(numberElements), 1, 0, 0);
+			}
+
+		}
+
+		list->Close();
+
+
+		/*str = "Worker " + std::to_string(id);
+		str += " Finished!\n";
+		OutputDebugStringA(str.c_str());*/
+			// Notify main thread that rendering subtask is done
+		{
+			std::lock_guard<std::mutex> guard(m_workerMutex);
+			m_numWorkersFinished++;
+			m_workerCondVar.notify_all();
+			//OutputDebugStringA("worker dun\n");
+		}
+	}
+}
+
 /*
  Naive implementation, no re-ordering, checking for state changes, etc.
  TODO.
-*/
+//*/
+#if 1
 void DX12Renderer::frame() {
+	//OutputDebugStringA("new frame --------------\n");
 
 	if(m_firstFrame) {
 		//Execute the initialization command list
-		ThrowIfFailed(m_commandList->Close());
-		ID3D12CommandList* listsToExecute[] = { m_commandList.Get() };
+		ThrowIfFailed(m_preCommand.list->Close());
+		ID3D12CommandList* listsToExecute[] = { m_preCommand.list.Get() };
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+
+		waitForGPU(); //Wait for GPU to finish.
+		m_firstFrame = false;
+	}
+
+	// Get the handle for the current render target used as back buffer
+	m_cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
+	m_cdh.ptr += m_renderTargetDescriptorSize * getFrameIndex();
+
+	{
+		//OutputDebugStringA("Pre tasks finished\n");
+		// Notify workers to begin creating command lists
+		std::lock_guard<std::mutex> guard(m_mainMutex);
+		for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+			m_runWorkers[i] = true;
+		}
+		//m_mainBeginWorkers = true;
+		m_mainCondVar.notify_all();
+		//OutputDebugStringA("notified\n");
+	}
+
+	// Command list allocators can only be reset when the associated command lists have
+	// finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
+	m_preCommand.allocator->Reset();
+	m_preCommand.list->Reset(m_preCommand.allocator.Get(), nullptr);
+	
+	// Indicate that the back buffer will be used as render target.
+	D3D12_RESOURCE_BARRIER barrierDesc = {};
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	m_preCommand.list->ResourceBarrier(1, &barrierDesc);
+
+
+	m_preCommand.list->OMSetRenderTargets(1, &m_cdh, true, nullptr);
+	m_preCommand.list->ClearRenderTargetView(m_cdh, m_clearColor, 0, nullptr);
+
+
+	{
+		//Execute the pre command list
+		m_preCommand.list->Close();
+		ID3D12CommandList* listsToExecute[] = { m_preCommand.list.Get() };
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+	}
+
+
+	// Wait for worker threads to finish
+	{
+		std::unique_lock<std::mutex> mlock(m_workerMutex);
+		//OutputDebugStringA("wait\n");
+		m_workerCondVar.wait(mlock, [&]() { return m_numWorkersFinished >= NUM_WORKER_THREADS; });
+		//OutputDebugStringA("do\n");
+		//OutputDebugStringA("All workers finished! Executing worker command lists\n");
+		m_numWorkersFinished.store(0);
+		// Execute the worker command lists
+		ID3D12CommandList* listsToExecute[NUM_WORKER_THREADS];
+		for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+			listsToExecute[i] = m_workerCommands[i].list.Get();
+		}
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+		// Clear submitted draw list
+		drawList2.clear();
+	}
+
+	// Reset post command
+	m_postCommand.allocator->Reset();
+	m_postCommand.list->Reset(m_postCommand.allocator.Get(), nullptr);
+
+	// Indicate that the back buffer will now be used to present
+	barrierDesc = {};
+	barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierDesc.Transition.pResource = m_renderTargets[getFrameIndex()].Get();
+	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	m_postCommand.list->ResourceBarrier(1, &barrierDesc);
+
+
+	{
+		// Close the list to prepare it for execution.
+		m_postCommand.list->Close();
+		ID3D12CommandList* listsToExecute[] = { m_postCommand.list.Get() };
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
+	}
+
+};
+#else
+void DX12Renderer::frame() {
+
+	if (m_firstFrame) {
+		//Execute the initialization command list
+		ThrowIfFailed(m_preCommand.list->Close());
+		ID3D12CommandList* listsToExecute[] = { m_preCommand.list.Get() };
 		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
 
 		//for (UINT i = 0; i < getNumSwapBuffers(); ++i) {
@@ -408,7 +623,7 @@ void DX12Renderer::frame() {
 
 	// Command list allocators can only be reset when the associated command lists have
 	// finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
-	m_commandAllocator->Reset();
+	m_preCommand.allocator->Reset();
 
 	//if (perMat != 1) {
 
@@ -433,8 +648,8 @@ void DX12Renderer::frame() {
 
 	//auto work = *drawList2.begin();
 
-	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
-	
+	m_preCommand.list->Reset(m_preCommand.allocator.Get(), nullptr);
+
 
 	// Indicate that the back buffer will be used as render target.
 	D3D12_RESOURCE_BARRIER barrierDesc = {};
@@ -443,35 +658,37 @@ void DX12Renderer::frame() {
 	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	m_commandList->ResourceBarrier(1, &barrierDesc);
+	m_preCommand.list->ResourceBarrier(1, &barrierDesc);
 
 	// Record commands
 	// Get the handle for the current render target used as back buffer
 	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 	cdh.ptr += m_renderTargetDescriptorSize * getFrameIndex();
 
-	m_commandList->OMSetRenderTargets(1, &cdh, true, nullptr);
+	m_preCommand.list->OMSetRenderTargets(1, &cdh, true, nullptr);
 
-	m_commandList->ClearRenderTargetView(cdh, m_clearColor, 0, nullptr);
+	m_preCommand.list->ClearRenderTargetView(cdh, m_clearColor, 0, nullptr);
 
 	// Set root signature
-	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+	m_preCommand.list->SetGraphicsRootSignature(m_rootSignature.Get());
 
 	for (auto work : drawList2) {
 
 		// Set pipeline
 		// TODO: only do this when neccesary
-		m_commandList->SetPipelineState(work.first->getPipelineState());
+		m_preCommand.list->SetPipelineState(work.first->getPipelineState());
 
 		// Enable the technique
 		// This binds constant buffers
-		work.first->enable(this); 
+		// Enable the technique
+			// This binds constant buffers
+		work.first->enable(this, m_preCommand.list.Get());
 
 		// Set topology
-		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_preCommand.list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		//Set necessary states.
-		m_commandList->RSSetViewports(1, &m_viewport);
-		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+		m_preCommand.list->RSSetViewports(1, &m_viewport);
+		m_preCommand.list->RSSetScissorRects(1, &m_scissorRect);
 
 
 		for (auto mesh : work.second) {
@@ -480,19 +697,19 @@ void DX12Renderer::frame() {
 			for (auto t : mesh->textures) {
 				// we do not really know here if the sampler has been
 				// defined in the shader.
-				t.second->bind(t.first);
+				static_cast<DX12Texture2D*>(t.second)->bind(t.first, m_preCommand.list.Get());
 			}
 
 			// Bind vertices, normals and UVs
 			for (auto element : mesh->geometryBuffers) {
-				mesh->bindIAVertexBuffer(element.first);
+				mesh->bindIAVertexBuffer(element.first, m_preCommand.list.Get());
 				//mesh->bindIAVertexBuffer(mesh->geometryBuffers.begin()->first);
 				//mesh->geometryBuffers.begin()->second.buffer->bind(0, 48, 0);
 			}
 			// Bind translation constant buffer
-			mesh->txBuffer->bind(work.first->getMaterial());
+			static_cast<DX12ConstantBuffer*>(mesh->txBuffer)->bind(work.first->getMaterial(), m_preCommand.list.Get());
 			// Draw
-			m_commandList->DrawInstanced(static_cast<UINT>(numberElements), 1, 0, 0);
+			m_preCommand.list->DrawInstanced(static_cast<UINT>(numberElements), 1, 0, 0);
 		}
 
 	}
@@ -506,20 +723,20 @@ void DX12Renderer::frame() {
 	barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	m_commandList->ResourceBarrier(1, &barrierDesc);
+	m_preCommand.list->ResourceBarrier(1, &barrierDesc);
 
 	//Close the list to prepare it for execution.
-	m_commandList->Close();
+	m_preCommand.list->Close();
 
 
 
 
 	//Execute the command list.
-	ID3D12CommandList* listsToExecute[] = { m_commandList.Get() };
+	ID3D12CommandList* listsToExecute[] = { m_preCommand.list.Get() };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(listsToExecute), listsToExecute);
 
 };
-
+#endif
 void DX12Renderer::present() {
 
 	//Present the frame.

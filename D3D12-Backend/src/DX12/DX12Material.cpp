@@ -201,18 +201,22 @@ int DX12Material::compileMaterial(std::string& errString) {
 };
 
 int DX12Material::enable() {
+
+	throw std::exception("The material must be enabled using the other enable method taking one parameter");
+
+	return -1;
+}
+int DX12Material::enable(ID3D12GraphicsCommandList3* cmdList) {
 	if (!isValid)
 		return -1;
 
-	//glUseProgram(program);
-
-	// TODO: support multiple CBs by using a single descriptorHeap
 	for (auto cb : m_constantBuffers) {
-		cb.second->bind(this);
+		cb.second->bind(this, cmdList);
 	}
 
 	return 0;
-};
+}
+;
 
 void DX12Material::disable() {
 	//glUseProgram(0);
