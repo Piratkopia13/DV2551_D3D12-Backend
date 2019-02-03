@@ -23,19 +23,10 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 		return -1;
 	}
 
-	D3D12_RESOURCE_DESC textureDesc = {
-		D3D12_RESOURCE_DIMENSION_TEXTURE2D,
-		0,
-		w,h,
-		1,
-		1,
-		DXGI_FORMAT_R8G8B8A8_UINT,
-		{},											
-		D3D12_TEXTURE_LAYOUT_UNKNOWN,
-		D3D12_RESOURCE_FLAG_NONE
-	};
+	D3D12_RESOURCE_DESC textureDesc = {};
 
-	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UINT;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//textureDesc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
 	textureDesc.DepthOrArraySize = 1;
 	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	textureDesc.Width = w;
@@ -83,7 +74,7 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = rgba; // pointer to our image data
 	textureData.RowPitch = w * bpp; /// size of all our triangle vertex data
-	textureData.SlicePitch = w * bpp * textureDesc.Height; /// also the size of our triangle vertex data
+	textureData.SlicePitch = w * bpp * h; /// also the size of our triangle vertex data
 
 	// Now we copy the upload buffer contents to the default heap
 	

@@ -140,16 +140,16 @@ int DX12Material::compileShader(ShaderType type) {
 	HRESULT hr;
 	switch (type) {
 	case Material::ShaderType::VS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "VSMain", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "VSMain", "vs_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::PS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "PSMain", "ps_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "PSMain", "ps_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::GS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "GSMain", "gs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "GSMain", "gs_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::CS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "CSMain", "cs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "CSMain", "cs_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	}
 

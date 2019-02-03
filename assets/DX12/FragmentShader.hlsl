@@ -17,8 +17,8 @@ cbuffer DIFFUSE_TINT_NAME : register(MERGE(b, DIFFUSE_TINT)) {
 float4 PSMain(VSOut input) : SV_TARGET0 {
 
 #ifdef DIFFUSE_SLOT
-    // float4 color = tex.Sample(ss, input.texCoord);
-    float4 color = tex.Sample(ss, float2(0.5, 0.5));
+    float4 color = tex.Sample(ss, input.texCoord);
+    // float4 color = tex.Sample(ss, float2(0.5, 0.5));
 #else
  	float4 color = float4(1.0, 1.0, 1.0, 1.0);
 #endif

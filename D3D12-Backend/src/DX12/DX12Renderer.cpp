@@ -424,7 +424,6 @@ void DX12Renderer::workerThread(unsigned int id) {
 		list->OMSetRenderTargets(1, &m_cdh, true, nullptr);
 		list->SetGraphicsRootSignature(m_rootSignature.Get());
 
-		// TODO: only iterate through part of the drawList depending on worker id and num workers
 		auto start = drawList2.begin();
 		int load = drawList2.size() / NUM_WORKER_THREADS;
 		std::advance(start, id * load);
@@ -507,6 +506,7 @@ void DX12Renderer::frame() {
 		waitForGPU(); //Wait for GPU to finish.
 		m_firstFrame = false;
 	}
+	//waitForGPU(); // Wait for GPU to finish last frame
 
 	// Get the handle for the current render target used as back buffer
 	m_cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
@@ -745,6 +745,7 @@ void DX12Renderer::present() {
 
 	waitForGPU(); //Wait for GPU to finish.
 				  //NOT BEST PRACTICE, only used as such for simplicity.
+
 }
 
 //void DX12Renderer::addCbvSrvUavDescriptor() {
