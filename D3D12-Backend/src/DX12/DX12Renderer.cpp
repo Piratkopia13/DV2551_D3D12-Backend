@@ -1,7 +1,8 @@
-#include "DX12Renderer.h"
+﻿#include "DX12Renderer.h"
 
 #include <stdio.h>
 #include <cassert>
+#include <guiddef.h>
 //#include <pix3.h>
 
 #include "DX12Material.h"
@@ -14,7 +15,7 @@
 #include "DX12VertexBuffer.h"
 
 const UINT DX12Renderer::NUM_SWAP_BUFFERS = 2;
-const UINT DX12Renderer::NUM_WORKER_THREADS = 4;
+const UINT DX12Renderer::NUM_WORKER_THREADS = 1;
 
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
@@ -28,19 +29,30 @@ DX12Renderer::DX12Renderer()
 	//, m_cbvSrvUavDescriptorHeap(nullptr)
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
+	m_running.store(true);
 }
 
 DX12Renderer::~DX12Renderer() {
-	//delete[] m_workerCondVars;
-	//delete[] m_workerMutexes;
-	//delete[] m_workersFinished;
+	m_running.store(false);
+	// Wake up workers for termination
+	{
+		std::lock_guard<std::mutex> guard(m_mainMutex);
+		for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+			m_runWorkers[i] = true;
+		}
+	}
+	m_mainCondVar.notify_all();
+
 	waitForGPU();
-	//delete[] m_cbvSrvUavDescriptorHeap;
+	//reportLiveObjects();
+
+	for (std::thread& thread : m_workerThreads)
+		thread.join();
 }
 
 int DX12Renderer::shutdown() {
-	/*SDL_GL_DeleteContext(context);
-	SDL_Quit();*/
+	reportLiveObjects();
+	//delete this;
 	return 0;
 }
 
@@ -133,16 +145,25 @@ void DX12Renderer::setWinTitle(const char* title) {
 
 int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
+	DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
 	//Enable the D3D12 debug layer.
-	ID3D12Debug1* debugController = nullptr;
-
+	wComPtr<ID3D12Debug1> debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
 		debugController->SetEnableGPUBasedValidation(true);
 	}
-	//SafeRelease(&debugController);
+	wComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf())))) {
+		dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+
+		dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+		dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
+	}
 #endif
+	ThrowIfFailed(
+		CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf()))
+	);
 
 	//GetWindowLong(&hwnd, 0);
 	//GetModuleHandle(NULL);
@@ -395,9 +416,7 @@ void DX12Renderer::submit(Mesh* mesh) {
 
 void DX12Renderer::workerThread(unsigned int id) {
 
-
-	bool running = true;
-	while (running) {
+	while (true) {
 		// Wait for event from main thread to begin
 		{
 			/*std::string str = "Worker " + std::to_string(id);
@@ -407,6 +426,9 @@ void DX12Renderer::workerThread(unsigned int id) {
 			m_mainCondVar.wait(mlock, [&]() { return m_runWorkers[id]; });
 			m_runWorkers[id] = false;
 		}
+		// Stop thread if needed
+		if (!m_running) break;
+
 		auto& allocator = m_workerCommands[id].allocator;
 		auto& list = m_workerCommands[id].list;
 		//OutputDebugStringA("started worker\n");
@@ -483,9 +505,9 @@ void DX12Renderer::workerThread(unsigned int id) {
 		{
 			std::lock_guard<std::mutex> guard(m_workerMutex);
 			m_numWorkersFinished++;
-			m_workerCondVar.notify_all();
 			//OutputDebugStringA("worker dun\n");
 		}
+		m_workerCondVar.notify_all();
 	}
 }
 
@@ -520,9 +542,9 @@ void DX12Renderer::frame() {
 			m_runWorkers[i] = true;
 		}
 		//m_mainBeginWorkers = true;
-		m_mainCondVar.notify_all();
 		//OutputDebugStringA("notified\n");
 	}
+	m_mainCondVar.notify_all();
 
 	// Command list allocators can only be reset when the associated command lists have
 	// finished execution on the GPU; fences are used to ensure this (See WaitForGpu method)
@@ -767,6 +789,17 @@ void DX12Renderer::waitForGPU() {
 		m_fence->SetEventOnCompletion(fence, m_eventHandle);
 		WaitForSingleObject(m_eventHandle, INFINITE);
 	}
+}
+
+void DX12Renderer::reportLiveObjects() {
+#ifdef _DEBUG
+	OutputDebugStringA("== REPORT LIVE OBJECTS ==\n");
+	wComPtr<IDXGIDebug1> dxgiDebug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
+		ThrowIfFailed(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_DX, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL)));
+	}
+	OutputDebugStringA("=========================\n");
+#endif
 }
 
 void DX12Renderer::setClearColor(float r, float g, float b, float a) {

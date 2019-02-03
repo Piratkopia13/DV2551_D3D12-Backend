@@ -2,6 +2,12 @@
 
 #include "../Renderer.h"
 #include "DX12.h"
+#include <dxgi1_6.h>
+#ifdef _DEBUG
+#include <initguid.h>
+#include <DXGIDebug.h>
+#endif
+
 #include "Win32Window.h"
 #include <memory>
 #include <dxgi1_6.h> //Only used for initialization of the device and swap chain.
@@ -61,14 +67,15 @@ public:
 	//void addSamplerDescriptor();
 
 	void waitForGPU();
+	void reportLiveObjects();
 
 protected:
 	
 private:
 	void workerThread(unsigned int id);
 	struct Command {
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator; // Allocator only grows, use multple (one for each thing)
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList3> list;
+		wComPtr<ID3D12CommandAllocator> allocator; // Allocator only grows, use multple (one for each thing)
+		wComPtr<ID3D12GraphicsCommandList3> list;
 	};
 private:
 	std::unique_ptr<Win32Window> m_window;
@@ -80,19 +87,21 @@ private:
 	UINT m_frameIndex;
 
 	// DX12 stuff
-	Microsoft::WRL::ComPtr<ID3D12Device4> m_device;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+	wComPtr<ID3D12Device4> m_device;
+	wComPtr<ID3D12CommandQueue> m_commandQueue;
 	Command m_preCommand;
 	Command m_postCommand;
-	Microsoft::WRL::ComPtr<ID3D12Fence1> m_fence;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
-	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
-	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource1>> m_renderTargets;
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
+	wComPtr<ID3D12Fence1> m_fence;
+	wComPtr<ID3D12DescriptorHeap> m_renderTargetsHeap;
+	wComPtr<IDXGISwapChain4> m_swapChain;
+	std::vector<wComPtr<ID3D12Resource1>> m_renderTargets;
+	wComPtr<ID3D12RootSignature> m_rootSignature;
 
-	//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* m_cbvSrvUavDescriptorHeap;
+	wComPtr<IDXGIFactory2> m_dxgiFactory;
+
+	//wComPtr<ID3D12DescriptorHeap>* m_cbvSrvUavDescriptorHeap;
 	//int m_numCbvSrvUavDescriptors;
-	/*Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>* m_samplerDescriptorHeap;
+	/*wComPtr<ID3D12DescriptorHeap>* m_samplerDescriptorHeap;
 	int m_numSamplerDescriptors;*/
 
 	// Multi threading stuff
@@ -106,6 +115,7 @@ private:
 	std::mutex m_mainMutex;
 	std::condition_variable m_mainCondVar;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cdh;
+	std::atomic_bool m_running;
 	
 	UINT m_renderTargetDescriptorSize;
 	UINT64 m_fenceValue;
@@ -115,7 +125,7 @@ private:
 
 	// Upload buffer stuff
 	// Currently only one large
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_uploadBuffer;
+	wComPtr<ID3D12Resource> m_uploadBuffer;
 	size_t m_uploadHeapSize;
 	UINT8* m_pDataBegin = nullptr; // Starting position of upload buffer
 	UINT8* m_pDataCur = nullptr; // Current position of upload buffer

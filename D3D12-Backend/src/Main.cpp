@@ -328,6 +328,7 @@ void shutdown() {
 		delete t;
 	}
 	renderer->shutdown();
+	delete renderer;
 };
 
 int main(int argc, char *argv[])
@@ -338,12 +339,13 @@ int main(int argc, char *argv[])
 	renderer->setClearColor(0.0f, 0.1f, 0.1f, 1.0f);
 	initialiseTestbench();
 
+	//renderer->shutdown(); // TODO: remove
 	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	run();
 
 	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
-	//shutdown();
+	shutdown();
 	return 0;
 };
