@@ -203,7 +203,7 @@ int initialiseTestbench()
 	// triangle geometry:
 	float4 triPos[3] = { { 0.0f,  0.05, 0.0f, 1.0f },{ 0.05, -0.05, 0.0f, 1.0f },{ -0.05, -0.05, 0.0f, 1.0f } };
 	float4 triNor[3] = { { 0.0f,  0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 0.0f } };
-	float2 triUV[3] =  { { 0.5f,  0.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f } };
+	float2 triUV[3] = { { 0.5f,  -0.99f },{ 1.49f, 1.1f },{ -0.51, 1.1f } };
 
 	// load Materials.
 	std::string shaderPath = renderer->getShaderPath();
@@ -214,29 +214,6 @@ int initialiseTestbench()
 		1.0,1.0,1.0,1.0,
 		1.0,0.0,0.0,1.0
 	};
-
-
-	//// TEST
-	//int i = 0;
-	//Material* m = renderer->makeMaterial("material_" + std::to_string(i));
-	//m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
-	//m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
-
-	//m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
-	//m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
-
-	//std::string err;
-	//m->compileMaterial(err);
-
-	//// add a constant buffer to the material, to tint every triangle using this material
-	//m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
-	//// no need to update anymore
-	//// when material is bound, this buffer should be also bound for access.
-
-	//m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
-
-	//materials.push_back(m);
-
 
 	for (int i = 0; i < materialDefs.size(); i++)
 	{
