@@ -40,6 +40,9 @@ DX12Material::DX12Material(const std::string& name, DX12Renderer* renderer)
 DX12Material::~DX12Material() {
 
 	delete[] m_inputElementDesc;
+	for (auto cb : m_constantBuffers) {
+		delete cb.second;
+	}
 	// delete attached constant buffers
 	//for (auto buffer : constantBuffers) {
 	//	if (buffer.second != nullptr) {
@@ -140,16 +143,16 @@ int DX12Material::compileShader(ShaderType type) {
 	HRESULT hr;
 	switch (type) {
 	case Material::ShaderType::VS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "VSMain", "vs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "VSMain", "vs_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::PS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "PSMain", "ps_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "PSMain", "ps_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::GS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "GSMain", "gs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "GSMain", "gs_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	case Material::ShaderType::CS:
-		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "CSMain", "cs_5_0", flags, 0, &shaderBlob, &errorBlob);
+		hr = D3DCompile(shaderSource.c_str(), shaderSource.length(), nullptr, nullptr, nullptr, "CSMain", "cs_5_1", flags, 0, &shaderBlob, &errorBlob);
 		break;
 	}
 
@@ -190,8 +193,8 @@ int DX12Material::compileMaterial(std::string& errString) {
 	const unsigned int NUM_ELEMS = 3;
 	m_inputElementDesc = new D3D12_INPUT_ELEMENT_DESC[NUM_ELEMS];
 	m_inputElementDesc[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	m_inputElementDesc[1] = { "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	m_inputElementDesc[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,		 0, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	m_inputElementDesc[1] = { "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	m_inputElementDesc[2] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,		 2, D3D12_APPEND_ALIGNED_ELEMENT,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	m_inputLayoutDesc.pInputElementDescs = m_inputElementDesc;
 	m_inputLayoutDesc.NumElements = NUM_ELEMS;
@@ -201,18 +204,22 @@ int DX12Material::compileMaterial(std::string& errString) {
 };
 
 int DX12Material::enable() {
+
+	throw std::exception("The material must be enabled using the other enable method taking one parameter");
+
+	return -1;
+}
+int DX12Material::enable(ID3D12GraphicsCommandList3* cmdList) {
 	if (!isValid)
 		return -1;
 
-	//glUseProgram(program);
-
-	// TODO: support multiple CBs by using a single descriptorHeap
 	for (auto cb : m_constantBuffers) {
-		cb.second->bind(this);
+		cb.second->bind(this, cmdList);
 	}
 
 	return 0;
-};
+}
+;
 
 void DX12Material::disable() {
 	//glUseProgram(0);

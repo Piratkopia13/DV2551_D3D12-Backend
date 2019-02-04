@@ -41,4 +41,6 @@ Mesh::~Mesh()
 	for (auto g : geometryBuffers) {
 		g.second.buffer->decRef();
 	}
+
+	delete txBuffer;
 }

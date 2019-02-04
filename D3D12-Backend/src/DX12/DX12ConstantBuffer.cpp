@@ -72,11 +72,16 @@ void DX12ConstantBuffer::setData(const void* data, size_t size, Material* m, uns
 
 void DX12ConstantBuffer::bind(Material* m) {
 
+	throw std::exception("The constant buffer must be bound using the other bind method taking two parameters");
+
+}
+
+void DX12ConstantBuffer::bind(Material* material, ID3D12GraphicsCommandList3* cmdList) {
 	// TODO: look up root index through root descriptor
 	UINT rootIndex = (m_location == 5) ? 0 : 1;
 
-	m_renderer->getCmdList()->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[m_renderer->getFrameIndex()]->GetGPUVirtualAddress());
-	
+	cmdList->SetGraphicsRootConstantBufferView(rootIndex, m_constantBufferUploadHeap[m_renderer->getFrameIndex()]->GetGPUVirtualAddress());
+
 	//// set constant buffer descriptor heap
 	//ID3D12DescriptorHeap* descriptorHeaps[] = { m_mainDescriptorHeap[m_renderer->getFrameIndex()].Get() };
 	//m_renderer->getCmdList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);

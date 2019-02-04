@@ -8,8 +8,9 @@ class DX12ConstantBuffer : public ConstantBuffer {
 public:
 	DX12ConstantBuffer(std::string name, unsigned int location, DX12Renderer* renderer);
 	~DX12ConstantBuffer();
-	void setData(const void* data, size_t size, Material* m, unsigned int location);
-	void bind(Material*);
+	virtual void setData(const void* data, size_t size, Material* m, unsigned int location) override;
+	virtual void bind(Material*) override;
+	void bind(Material* material, ID3D12GraphicsCommandList3* cmdList);
 
 	//ID3D12DescriptorHeap* getDescriptorHeap() const;
 

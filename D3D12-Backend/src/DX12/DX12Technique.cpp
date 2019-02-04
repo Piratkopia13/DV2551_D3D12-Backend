@@ -54,11 +54,16 @@ void DX12Technique::enable(Renderer* renderer) {
 	// better to delegate the render state to the renderer, it can be
 	// more clever about changes with current render state set.
 	//renderer->setRenderState(renderState);
-	material->enable();
+	//material->enable();
+	throw std::exception("The technique must be enabled using the other enable method taking two parameters");
 
 	//DX12Renderer* dxRenderer = static_cast<DX12Renderer*>(renderer);
 
 	//dxRenderer->getCmdList()->Reset(dxRenderer->getCmdAllocator(), m_pipelineState.Get());
+}
+
+void DX12Technique::enable(Renderer* renderer, ID3D12GraphicsCommandList3* cmdList) {
+	static_cast<DX12Material*>(material)->enable(cmdList);
 }
 
 ID3D12PipelineState* DX12Technique::getPipelineState() const {

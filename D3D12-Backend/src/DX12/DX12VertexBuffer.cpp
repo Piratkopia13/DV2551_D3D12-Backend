@@ -40,16 +40,20 @@ void DX12VertexBuffer::setData(const void * data, size_t size, size_t offset) {
 }
 
 void DX12VertexBuffer::bind(size_t offset, size_t size, unsigned int location) {
+	throw std::exception("The vertex buffer must be bound using the other bind method taking four parameters");
+}
+
+void DX12VertexBuffer::bind(size_t offset, size_t size, unsigned int location, ID3D12GraphicsCommandList3* cmdList) {
 	assert(size + offset <= m_byteSize);
 	assert(m_vertexSize > 0);
-	
+
 	D3D12_VERTEX_BUFFER_VIEW vbView = {};
-	m_vbView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress() + offset;
-	m_vbView.SizeInBytes = static_cast<UINT>(size);
-	m_vbView.StrideInBytes = static_cast<UINT>(m_vertexSize);
+	vbView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress() + offset;
+	vbView.SizeInBytes = static_cast<UINT>(size);
+	vbView.StrideInBytes = static_cast<UINT>(m_vertexSize);
 	m_lastBoundVBSlot = location;
 	// Later update to just put in a buffer on the renderer to set multiple vertex buffers at once
-	m_renderer->getCmdList()->IASetVertexBuffers(m_lastBoundVBSlot, 1, &m_vbView);
+	cmdList->IASetVertexBuffers(m_lastBoundVBSlot, 1, &vbView);
 }
 
 void DX12VertexBuffer::unbind() {

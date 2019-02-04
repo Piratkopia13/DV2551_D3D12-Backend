@@ -47,6 +47,7 @@ void updateDelta()
 	static double avg[WINDOW_SIZE] = { 0.0 };
 	static double lastSum = 10.0;
 	static int loop = 0;
+	static double timeAccumulator = 0.f;
 
 	last = start;
 	//start = SDL_GetPerformanceCounter();
@@ -60,10 +61,17 @@ void updateDelta()
 	avg[loop] = deltaTime;
 	loop = (loop + 1) % WINDOW_SIZE;
 	gLastDelta = (lastSum / WINDOW_SIZE);
+
+	if (timeAccumulator >= 500.0) {
+		timeAccumulator = 0.0;
+		sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
+		renderer->setWinTitle(gTitleBuff);
+	}
+	timeAccumulator += deltaTime;
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
-constexpr int TOTAL_TRIS = 100;
+constexpr int TOTAL_TRIS = 5;
 // this has to do with how the triangles are spread in the screen, not important.
 constexpr int TOTAL_PLACES = 2 * TOTAL_TRIS;
 float xt[TOTAL_PLACES], yt[TOTAL_PLACES];
@@ -145,8 +153,8 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
-	renderer->setWinTitle(gTitleBuff);
+	/*sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
+	renderer->setWinTitle(gTitleBuff);*/
 	//OutputDebugString(L"RENDER\n");
 
 }
@@ -195,7 +203,7 @@ int initialiseTestbench()
 	// triangle geometry:
 	float4 triPos[3] = { { 0.0f,  0.05, 0.0f, 1.0f },{ 0.05, -0.05, 0.0f, 1.0f },{ -0.05, -0.05, 0.0f, 1.0f } };
 	float4 triNor[3] = { { 0.0f,  0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f, 0.0f } };
-	float2 triUV[3] =  { { 0.5f,  0.0f },{ 1.0f, 1.0f },{ 0.0f, 1.0f } };
+	float2 triUV[3] = { { 0.5f,  -0.99f },{ 1.49f, 1.1f },{ -0.51, 1.1f } };
 
 	// load Materials.
 	std::string shaderPath = renderer->getShaderPath();
@@ -206,29 +214,6 @@ int initialiseTestbench()
 		1.0,1.0,1.0,1.0,
 		1.0,0.0,0.0,1.0
 	};
-
-
-	//// TEST
-	//int i = 0;
-	//Material* m = renderer->makeMaterial("material_" + std::to_string(i));
-	//m->setShader(shaderPath + materialDefs[i][0] + shaderExtension, Material::ShaderType::VS);
-	//m->setShader(shaderPath + materialDefs[i][1] + shaderExtension, Material::ShaderType::PS);
-
-	//m->addDefine(materialDefs[i][2], Material::ShaderType::VS);
-	//m->addDefine(materialDefs[i][2], Material::ShaderType::PS);
-
-	//std::string err;
-	//m->compileMaterial(err);
-
-	//// add a constant buffer to the material, to tint every triangle using this material
-	//m->addConstantBuffer(DIFFUSE_TINT_NAME, DIFFUSE_TINT);
-	//// no need to update anymore
-	//// when material is bound, this buffer should be also bound for access.
-
-	//m->updateConstantBuffer(diffuse[i], 4 * sizeof(float), DIFFUSE_TINT);
-
-	//materials.push_back(m);
-
 
 	for (int i = 0; i < materialDefs.size(); i++)
 	{
@@ -343,6 +328,7 @@ void shutdown() {
 		delete t;
 	}
 	renderer->shutdown();
+	delete renderer;
 };
 
 int main(int argc, char *argv[])
@@ -353,12 +339,24 @@ int main(int argc, char *argv[])
 	renderer->setClearColor(0.0f, 0.1f, 0.1f, 1.0f);
 	initialiseTestbench();
 
+	//renderer->shutdown(); // TODO: remove
 	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	run();
 
 	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
-	//shutdown();
+	shutdown();
+
+
+#ifdef _DEBUG
+	OutputDebugStringA("== REPORT LIVE OBJECTS ==\n");
+	wComPtr<IDXGIDebug1> dxgiDebug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
+		ThrowIfFailed(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL)));
+	}
+	OutputDebugStringA("=========================\n");
+#endif
+
 	return 0;
 };
