@@ -347,5 +347,16 @@ int main(int argc, char *argv[])
 	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	shutdown();
+
+
+#ifdef _DEBUG
+	OutputDebugStringA("== REPORT LIVE OBJECTS ==\n");
+	wComPtr<IDXGIDebug1> dxgiDebug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
+		ThrowIfFailed(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL)));
+	}
+	OutputDebugStringA("=========================\n");
+#endif
+
 	return 0;
 };
