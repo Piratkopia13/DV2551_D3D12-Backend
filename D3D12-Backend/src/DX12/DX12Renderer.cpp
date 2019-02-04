@@ -16,6 +16,7 @@
 
 const UINT DX12Renderer::NUM_SWAP_BUFFERS = 2;
 const UINT DX12Renderer::NUM_WORKER_THREADS = 1;
+const UINT DX12Renderer::MAX_NUM_SAMPLERS = 10;
 
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
@@ -30,6 +31,8 @@ DX12Renderer::DX12Renderer()
 {
 	m_renderTargets.resize(NUM_SWAP_BUFFERS);
 	m_running.store(true);
+	m_numSamplerDescriptors = 0U;
+	m_samplerDescriptorHandleIncrementSize = 0U;
 }
 
 DX12Renderer::~DX12Renderer() {
@@ -65,8 +68,13 @@ Texture2D* DX12Renderer::makeTexture2D() {
 }
 
 Sampler2D* DX12Renderer::makeSampler2D() {
-	//return (Sampler2D*) new DX12Sampler2D();
-	return nullptr;
+	assert(m_numSamplerDescriptors < MAX_NUM_SAMPLERS);
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_samplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	cpuHandle.ptr += m_samplerDescriptorHandleIncrementSize * m_numSamplerDescriptors;
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_samplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	gpuHandle.ptr += m_samplerDescriptorHandleIncrementSize * m_numSamplerDescriptors;
+	m_numSamplerDescriptors++;
+	return (Sampler2D*) new DX12Sampler2D(m_device.Get(), cpuHandle, gpuHandle);
 }
 
 ConstantBuffer* DX12Renderer::makeConstantBuffer(std::string NAME, unsigned int location) {
@@ -110,6 +118,11 @@ UINT DX12Renderer::getNumSwapBuffers() const {
 
 UINT DX12Renderer::getFrameIndex() const {
 	return m_swapChain->GetCurrentBackBufferIndex();
+}
+
+ID3D12DescriptorHeap * DX12Renderer::getSamplerDescriptorHeap() const
+{
+	return m_samplerDescriptorHeap.Get();
 }
 
 VertexBuffer* DX12Renderer::makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage) {
@@ -279,6 +292,18 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	m_renderTargetDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	D3D12_CPU_DESCRIPTOR_HANDLE cdh = m_renderTargetsHeap->GetCPUDescriptorHandleForHeapStart();
 
+
+
+	// Create descriptor heap for samplers
+	D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
+	samplerHeapDesc.NumDescriptors = MAX_NUM_SAMPLERS;
+	samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&m_samplerDescriptorHeap)));
+
+	m_samplerDescriptorHandleIncrementSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+
 	// One RTV for each frame
 	for (UINT n = 0; n < NUM_SWAP_BUFFERS; n++) {
 		ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
@@ -318,6 +343,22 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	dt.NumDescriptorRanges = ARRAYSIZE(dtRanges);
 	dt.pDescriptorRanges = dtRanges;
 
+
+	//define descriptor range(s)
+	D3D12_DESCRIPTOR_RANGE dt2Ranges[1];
+	dt2Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+	dt2Ranges[0].NumDescriptors = MAX_NUM_SAMPLERS;
+	dt2Ranges[0].BaseShaderRegister = 0; // register bX
+	dt2Ranges[0].RegisterSpace = 0; // register (bX,spaceY)
+	dt2Ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	//create a descriptor table
+	D3D12_ROOT_DESCRIPTOR_TABLE dt2;
+	dt2.NumDescriptorRanges = ARRAYSIZE(dt2Ranges);
+	dt2.pDescriptorRanges = dt2Ranges;
+
+
+
 	////create a descriptor table
 	//D3D12_ROOT_DESCRIPTOR_TABLE dt2;
 	//dt2.NumDescriptorRanges = ARRAYSIZE(dtRanges2);
@@ -331,7 +372,7 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	de2.RegisterSpace = 0;
 
 	//create root parameter
-	D3D12_ROOT_PARAMETER rootParam[3];
+	D3D12_ROOT_PARAMETER rootParam[4];
 	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[0].Descriptor = de;
 	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -341,6 +382,9 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	rootParam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParam[2].DescriptorTable = dt;
 	rootParam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParam[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParam[3].DescriptorTable = dt2;
+	rootParam[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	// Create static sampler desc
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -362,8 +406,8 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	rsDesc.NumParameters = ARRAYSIZE(rootParam);
 	rsDesc.pParameters = rootParam;
-	rsDesc.NumStaticSamplers = 1;
-	rsDesc.pStaticSamplers = &sampler;
+	rsDesc.NumStaticSamplers = 0;
+	rsDesc.pStaticSamplers = nullptr;
 
 	ID3DBlob* sBlob;
 	ID3DBlob* errorBlob;
@@ -515,7 +559,7 @@ void DX12Renderer::workerThread(unsigned int id) {
  Naive implementation, no re-ordering, checking for state changes, etc.
  TODO.
 //*/
-#if 1
+#if 0
 void DX12Renderer::frame() {
 	//OutputDebugStringA("new frame --------------\n");
 
@@ -694,6 +738,13 @@ void DX12Renderer::frame() {
 
 	// Set root signature
 	m_preCommand.list->SetGraphicsRootSignature(m_rootSignature.Get());
+
+
+	ID3D12DescriptorHeap* sampleDescriptorHeaps[] = { m_samplerDescriptorHeap.Get() };
+	// set the descriptor heap
+	m_preCommand.list->SetDescriptorHeaps(ARRAYSIZE(sampleDescriptorHeaps), sampleDescriptorHeaps);
+	// TODO: change the 3 to something dynamic
+	m_preCommand.list->SetGraphicsRootDescriptorTable(3, m_samplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
 	for (auto work : drawList2) {
 

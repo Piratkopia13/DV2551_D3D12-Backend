@@ -51,6 +51,8 @@ public:
 	UINT getNumSwapBuffers() const;
 	UINT getFrameIndex() const;
 
+	ID3D12DescriptorHeap* getSamplerDescriptorHeap() const;
+
 	int initialize(unsigned int width = 640, unsigned int height = 480);
 	void setWinTitle(const char* title);
 	int shutdown();
@@ -84,6 +86,7 @@ private:
 	bool m_firstFrame;
 	
 	static const UINT NUM_SWAP_BUFFERS;
+	static const UINT MAX_NUM_SAMPLERS;
 	UINT m_frameIndex;
 
 	// DX12 stuff
@@ -101,8 +104,9 @@ private:
 
 	//wComPtr<ID3D12DescriptorHeap>* m_cbvSrvUavDescriptorHeap;
 	//int m_numCbvSrvUavDescriptors;
-	/*wComPtr<ID3D12DescriptorHeap>* m_samplerDescriptorHeap;
-	int m_numSamplerDescriptors;*/
+	wComPtr<ID3D12DescriptorHeap> m_samplerDescriptorHeap;
+	UINT m_numSamplerDescriptors;
+	UINT m_samplerDescriptorHandleIncrementSize;
 
 	// Multi threading stuff
 	static const UINT NUM_WORKER_THREADS;

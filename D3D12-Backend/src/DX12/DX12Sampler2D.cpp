@@ -1,7 +1,7 @@
 #include "DX12Sampler2D.h"
 
 
-DX12Sampler2D::DX12Sampler2D(ID3D12Device4* device, D3D12_CPU_DESCRIPTOR_HANDLE handle) {
+DX12Sampler2D::DX12Sampler2D(ID3D12Device4* device, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle) {
 	m_samplerDesc = {};
 	m_samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	m_samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -12,7 +12,8 @@ DX12Sampler2D::DX12Sampler2D(ID3D12Device4* device, D3D12_CPU_DESCRIPTOR_HANDLE 
 	m_samplerDesc.MipLODBias = 0.0f;
 	m_samplerDesc.MaxAnisotropy = 1;
 	m_samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	m_CPUHandle = handle;
+	m_CPUHandle = cpuHandle;
+	m_GPUHandle = gpuHandle;
 	m_device = device;
 	m_device->CreateSampler(&m_samplerDesc, m_CPUHandle);
 }
@@ -49,4 +50,14 @@ void DX12Sampler2D::setWrap(WRAPPING u, WRAPPING v) {
 
 	// Make better implementation
 	m_device->CreateSampler(&m_samplerDesc, m_CPUHandle);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12Sampler2D::getCPUHandle()
+{
+	return m_CPUHandle;
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE DX12Sampler2D::getGPUHandle()
+{
+	return m_GPUHandle;
 }

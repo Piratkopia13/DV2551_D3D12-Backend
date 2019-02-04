@@ -2,6 +2,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "DX12Sampler2D.h"
 
 DX12Texture2D::DX12Texture2D(DX12Renderer* renderer) {
 	m_renderer = renderer;
@@ -113,6 +114,13 @@ void DX12Texture2D::bind(unsigned int slot) {
 }
 
 void DX12Texture2D::bind(unsigned int slot, ID3D12GraphicsCommandList3* cmdList) {
+
+	/*ID3D12DescriptorHeap* sampleDescriptorHeaps[] = { m_renderer->getSamplerDescriptorHeap() };
+	// set the descriptor heap
+	cmdList->SetDescriptorHeaps(ARRAYSIZE(sampleDescriptorHeaps), sampleDescriptorHeaps);
+	// TODO: change the 3 to something dynamic
+	cmdList->SetGraphicsRootDescriptorTable(3, reinterpret_cast<DX12Sampler2D*>(sampler)->getGPUHandle());*/
+
 	// set the descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_mainDescriptorHeap.Get() };
 	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);
