@@ -18,8 +18,8 @@ DX12Texture2D::~DX12Texture2D() {
 int DX12Texture2D::loadFromFile(std::string filename) {
 	
 	int w, h, bpp;
-	unsigned char* rgba = stbi_load(filename.c_str(), &w, &h, &bpp, STBI_rgb_alpha); // TODO: remove rgba memory after copy to gpu is complete
-	if (rgba == nullptr) {
+	m_rgba = stbi_load(filename.c_str(), &w, &h, &bpp, STBI_rgb_alpha); // TODO: remove m_rgba memory after copy to gpu is complete
+	if (m_rgba == nullptr) {
 		return -1;
 	}
 
@@ -72,7 +72,7 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 
 	// store vertex buffer in upload heap
 	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = rgba; // pointer to our image data
+	textureData.pData = m_rgba; // pointer to our image data
 	textureData.RowPitch = w * bpp; /// size of all our triangle vertex data
 	textureData.SlicePitch = w * bpp * h; /// also the size of our triangle vertex data
 
@@ -102,7 +102,6 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 	m_renderer->getDevice()->CreateShaderResourceView(m_textureBuffer.Get(), &srvDesc, m_mainDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 
-	//delete rgba;
 	return 0;
 }
 
@@ -113,6 +112,11 @@ void DX12Texture2D::bind(unsigned int slot) {
 }
 
 void DX12Texture2D::bind(unsigned int slot, ID3D12GraphicsCommandList3* cmdList) {
+	if (m_rgba) {
+		delete m_rgba;
+		m_rgba = nullptr;
+	}
+
 	// set the descriptor heap
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_mainDescriptorHeap.Get() };
 	cmdList->SetDescriptorHeaps(ARRAYSIZE(descriptorHeaps), descriptorHeaps);

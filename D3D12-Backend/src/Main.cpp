@@ -324,6 +324,9 @@ void shutdown() {
 
 int main(int argc, char *argv[])
 {
+	// Check for memory leaks
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
 	renderer = Renderer::makeRenderer(Renderer::BACKEND::DX12);
 	renderer->initialize(800,600);
 	renderer->setWinTitle("DX12");

@@ -18,6 +18,7 @@ public:
 private:
 	DX12Renderer* m_renderer;
 
+	unsigned char* m_rgba;
 
 	wComPtr<ID3D12Resource> m_textureBuffer;
 	wComPtr<ID3D12DescriptorHeap> m_mainDescriptorHeap;
