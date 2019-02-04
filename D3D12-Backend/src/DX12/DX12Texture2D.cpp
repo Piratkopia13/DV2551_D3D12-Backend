@@ -26,7 +26,8 @@ int DX12Texture2D::loadFromFile(std::string filename) {
 	D3D12_RESOURCE_DESC textureDesc = {
 		D3D12_RESOURCE_DIMENSION_TEXTURE2D,
 		0,
-		w,h,
+		static_cast<UINT>(w),
+		static_cast<UINT>(h),
 		1,
 		1,
 		DXGI_FORMAT_R8G8B8A8_UINT,

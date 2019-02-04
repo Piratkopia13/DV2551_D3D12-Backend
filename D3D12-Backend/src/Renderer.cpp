@@ -9,5 +9,7 @@ Renderer* Renderer::makeRenderer(BACKEND option)
 		return new OpenGLRenderer();
 	if (option == BACKEND::DX12)
 		return new DX12Renderer();
+
+	throw("The option sent to makeRenderer was invalid.");
 }
 
