@@ -583,6 +583,7 @@ void DX12Renderer::frame() {
 		m_numWorkersFinished.store(0);
 		// Execute the worker command lists
 		ID3D12CommandList* listsToExecute[NUM_WORKER_THREADS];
+		//listsToExecute[0] = m_preCommand.list.Get();
 		for (int i = 0; i < NUM_WORKER_THREADS; i++) {
 			listsToExecute[i] = m_workerCommands[i].list.Get();
 		}
@@ -796,7 +797,7 @@ void DX12Renderer::reportLiveObjects() {
 	OutputDebugStringA("== REPORT LIVE OBJECTS ==\n");
 	wComPtr<IDXGIDebug1> dxgiDebug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
-		ThrowIfFailed(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_DX, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL)));
+		ThrowIfFailed(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL)));
 	}
 	OutputDebugStringA("=========================\n");
 #endif

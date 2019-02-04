@@ -40,6 +40,9 @@ DX12Material::DX12Material(const std::string& name, DX12Renderer* renderer)
 DX12Material::~DX12Material() {
 
 	delete[] m_inputElementDesc;
+	for (auto cb : m_constantBuffers) {
+		delete cb.second;
+	}
 	// delete attached constant buffers
 	//for (auto buffer : constantBuffers) {
 	//	if (buffer.second != nullptr) {
