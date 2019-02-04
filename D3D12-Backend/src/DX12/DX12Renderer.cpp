@@ -15,7 +15,7 @@
 #include "DX12VertexBuffer.h"
 
 const UINT DX12Renderer::NUM_SWAP_BUFFERS = 2;
-const UINT DX12Renderer::NUM_WORKER_THREADS = 1;
+const UINT DX12Renderer::NUM_WORKER_THREADS = 4;
 
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
@@ -447,7 +447,7 @@ void DX12Renderer::workerThread(unsigned int id) {
 		list->SetGraphicsRootSignature(m_rootSignature.Get());
 
 		auto start = drawList2.begin();
-		int load = drawList2.size() / NUM_WORKER_THREADS;
+		unsigned int load = static_cast<unsigned int>(drawList2.size()) / NUM_WORKER_THREADS;
 		std::advance(start, id * load);
 		auto end = start;
 		if (id == NUM_WORKER_THREADS - 1) {
