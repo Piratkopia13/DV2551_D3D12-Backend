@@ -71,9 +71,9 @@ void updateDelta()
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
-constexpr int TOTAL_TRIS = 5;
+constexpr int TOTAL_TRIS = 200;
 // this has to do with how the triangles are spread in the screen, not important.
-constexpr int TOTAL_PLACES = 2 * TOTAL_TRIS;
+constexpr int TOTAL_PLACES = 1 * TOTAL_TRIS;
 float xt[TOTAL_PLACES], yt[TOTAL_PLACES];
 
 // lissajous points
@@ -98,10 +98,6 @@ void run() {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		} else {
-
-			// Quit on escape or alt-f4
-			/*if (m_input.getKeyboardState().LeftAlt && m_input.getKeyboardState().F4)
-				PostQuitMessage(0);*/
 
 			// do the stuff
 			updateScene();
@@ -137,8 +133,6 @@ void updateScene()
 		shift+=max(TOTAL_TRIS / 1000.0,TOTAL_TRIS / 100.0);
 	}
 
-	//OutputDebugString(L"UPDATE\n");
-
 	return;
 };
 
@@ -153,9 +147,6 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	/*sprintf_s(gTitleBuff, "DX12 - %3.0lfms, %3.0lf fps", gLastDelta, 1000.0 / gLastDelta);
-	renderer->setWinTitle(gTitleBuff);*/
-	//OutputDebugString(L"RENDER\n");
 
 }
 
@@ -339,12 +330,7 @@ int main(int argc, char *argv[])
 	renderer->setClearColor(0.0f, 0.1f, 0.1f, 1.0f);
 	initialiseTestbench();
 
-	//renderer->shutdown(); // TODO: remove
-	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
-
 	run();
-
-	//static_cast<DX12Renderer*>(renderer)->waitForGPU();
 
 	shutdown();
 
