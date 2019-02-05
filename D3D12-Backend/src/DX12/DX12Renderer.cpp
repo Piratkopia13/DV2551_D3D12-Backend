@@ -345,24 +345,18 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
 
 	//define descriptor range(s)
-	D3D12_DESCRIPTOR_RANGE dt2Ranges[1];
-	dt2Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-	dt2Ranges[0].NumDescriptors = MAX_NUM_SAMPLERS;
-	dt2Ranges[0].BaseShaderRegister = 0; // register bX
-	dt2Ranges[0].RegisterSpace = 0; // register (bX,spaceY)
-	dt2Ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	D3D12_DESCRIPTOR_RANGE samplerDR[1];
+	samplerDR[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+	samplerDR[0].NumDescriptors = MAX_NUM_SAMPLERS;
+	samplerDR[0].BaseShaderRegister = 0; // register bX
+	samplerDR[0].RegisterSpace = 0; // register (bX,spaceY)
+	samplerDR[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//create a descriptor table
-	D3D12_ROOT_DESCRIPTOR_TABLE dt2;
-	dt2.NumDescriptorRanges = ARRAYSIZE(dt2Ranges);
-	dt2.pDescriptorRanges = dt2Ranges;
+	D3D12_ROOT_DESCRIPTOR_TABLE samplerDT;
+	samplerDT.NumDescriptorRanges = ARRAYSIZE(samplerDR);
+	samplerDT.pDescriptorRanges = samplerDR;
 
-
-
-	////create a descriptor table
-	//D3D12_ROOT_DESCRIPTOR_TABLE dt2;
-	//dt2.NumDescriptorRanges = ARRAYSIZE(dtRanges2);
-	//dt2.pDescriptorRanges = dtRanges2;
 
 	D3D12_ROOT_DESCRIPTOR de = {};
 	de.ShaderRegister = 5;
@@ -373,18 +367,23 @@ int DX12Renderer::initialize(unsigned int width, unsigned int height) {
 
 	//create root parameter
 	D3D12_ROOT_PARAMETER rootParam[4];
+	
 	rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[0].Descriptor = de;
 	rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	
 	rootParam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParam[1].Descriptor = de2;
 	rootParam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	
 	rootParam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParam[2].DescriptorTable = dt;
 	rootParam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 	rootParam[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParam[3].DescriptorTable = dt2;
+	rootParam[3].DescriptorTable = samplerDT;
 	rootParam[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 
 	// Create static sampler desc
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -739,7 +738,7 @@ void DX12Renderer::frame() {
 	// Set root signature
 	m_preCommand.list->SetGraphicsRootSignature(m_rootSignature.Get());
 
-
+	// Temp Sampler Crap
 	ID3D12DescriptorHeap* sampleDescriptorHeaps[] = { m_samplerDescriptorHeap.Get() };
 	// set the descriptor heap
 	m_preCommand.list->SetDescriptorHeaps(ARRAYSIZE(sampleDescriptorHeaps), sampleDescriptorHeaps);
