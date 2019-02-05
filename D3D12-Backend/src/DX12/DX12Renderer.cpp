@@ -16,7 +16,7 @@
 
 const UINT DX12Renderer::NUM_SWAP_BUFFERS = 2;
 const UINT DX12Renderer::NUM_WORKER_THREADS = 1;
-const UINT DX12Renderer::MAX_NUM_SAMPLERS = 10;
+const UINT DX12Renderer::MAX_NUM_SAMPLERS = 1;
 
 DX12Renderer::DX12Renderer()
 	: m_renderTargetDescriptorSize(0)
@@ -739,11 +739,11 @@ void DX12Renderer::frame() {
 	m_preCommand.list->SetGraphicsRootSignature(m_rootSignature.Get());
 
 	// Temp Sampler Crap
-	ID3D12DescriptorHeap* sampleDescriptorHeaps[] = { m_samplerDescriptorHeap.Get() };
+	/*ID3D12DescriptorHeap* sampleDescriptorHeaps[] = { m_samplerDescriptorHeap.Get() };
 	// set the descriptor heap
 	m_preCommand.list->SetDescriptorHeaps(ARRAYSIZE(sampleDescriptorHeaps), sampleDescriptorHeaps);
 	// TODO: change the 3 to something dynamic
-	m_preCommand.list->SetGraphicsRootDescriptorTable(3, m_samplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	m_preCommand.list->SetGraphicsRootDescriptorTable(3, m_samplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart());*/
 
 	for (auto work : drawList2) {
 
