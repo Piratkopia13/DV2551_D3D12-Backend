@@ -2,12 +2,11 @@
 
 #include "../Renderer.h"
 #include "DX12.h"
-#include <dxgi1_6.h>
+
 #ifdef _DEBUG
 #include <initguid.h>
 #include <DXGIDebug.h>
 #endif
-
 #include "Win32Window.h"
 #include <memory>
 #include <dxgi1_6.h> //Only used for initialization of the device and swap chain.
@@ -26,16 +25,23 @@ class DX12Mesh;
 class DX12Technique;
 
 class DX12Renderer : public Renderer {
+
+public:
+	enum RootParameterIndex {
+		CBV_TRANSLATION = 0,
+		CBV_DIFFUSE_TINT,
+		DT_SRVS,
+		DT_SAMPLERS
+	};
+
 public:
 	DX12Renderer();
 	~DX12Renderer();
 
 	Material* makeMaterial(const std::string& name);
 	Mesh* makeMesh();
-	//VertexBuffer* makeVertexBuffer();
 	VertexBuffer* makeVertexBuffer(size_t size, VertexBuffer::DATA_USAGE usage);
 	ConstantBuffer* makeConstantBuffer(std::string NAME, unsigned int location);
-	//	ResourceBinding* makeResourceBinding();
 	RenderState* makeRenderState();
 	Technique* makeTechnique(Material* m, RenderState* r);
 	Texture2D* makeTexture2D();
@@ -70,8 +76,6 @@ public:
 
 	void waitForGPU();
 	void reportLiveObjects();
-
-protected:
 	
 private:
 	void workerThread(unsigned int id);
@@ -87,7 +91,6 @@ private:
 	
 	static const UINT NUM_SWAP_BUFFERS;
 	static const UINT MAX_NUM_SAMPLERS;
-	UINT m_frameIndex;
 
 	// DX12 stuff
 	wComPtr<ID3D12Device4> m_device;
@@ -102,11 +105,15 @@ private:
 
 	wComPtr<IDXGIFactory2> m_dxgiFactory;
 
-	//wComPtr<ID3D12DescriptorHeap>* m_cbvSrvUavDescriptorHeap;
-	//int m_numCbvSrvUavDescriptors;
 	wComPtr<ID3D12DescriptorHeap> m_samplerDescriptorHeap;
 	UINT m_numSamplerDescriptors;
 	UINT m_samplerDescriptorHandleIncrementSize;
+	
+	UINT m_renderTargetDescriptorSize;
+	UINT64 m_fenceValue;
+	D3D12_VIEWPORT m_viewport;
+	D3D12_RECT m_scissorRect;
+	HANDLE m_eventHandle;
 
 	// Multi threading stuff
 	static const UINT NUM_WORKER_THREADS;
@@ -120,33 +127,16 @@ private:
 	std::condition_variable m_mainCondVar;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cdh;
 	std::atomic_bool m_running;
-	
-	UINT m_renderTargetDescriptorSize;
-	UINT64 m_fenceValue;
-	D3D12_VIEWPORT m_viewport;
-	D3D12_RECT m_scissorRect;
-	HANDLE m_eventHandle;
 
 	// Upload buffer stuff
 	// Currently only one large
-	wComPtr<ID3D12Resource> m_uploadBuffer;
-	size_t m_uploadHeapSize;
-	UINT8* m_pDataBegin = nullptr; // Starting position of upload buffer
-	UINT8* m_pDataCur = nullptr; // Current position of upload buffer
-	UINT8* m_pDataEnd = nullptr; // End position of upload buffer
+	//wComPtr<ID3D12Resource> m_uploadBuffer;
+	//size_t m_uploadHeapSize;
+	//UINT8* m_pDataBegin = nullptr; // Starting position of upload buffer
+	//UINT8* m_pDataCur = nullptr; // Current position of upload buffer
+	//UINT8* m_pDataEnd = nullptr; // End position of upload buffer
 
-	//std::vector<Mesh*> drawList;
-	std::unordered_map<DX12Technique*, std::vector<DX12Mesh*>> drawList2;
+	std::unordered_map<DX12Technique*, std::vector<DX12Mesh*>> drawList;
 
-	//bool globalWireframeMode = false;
-
-	////int initializeDX12(int major, int minor, unsigned int width, unsigned int height);
-	//float clearColor[4] = { 0,0,0,0 };
-	//std::unordered_map<int, int> BUFFER_MAP = {
-	//	{0, 0},
-	//	{CLEAR_BUFFER_FLAGS::COLOR, GL_COLOR_BUFFER_BIT },
-	//	{CLEAR_BUFFER_FLAGS::DEPTH, GL_DEPTH_BUFFER_BIT },
-	//	{CLEAR_BUFFER_FLAGS::STENCIL, GL_STENCIL_BUFFER_BIT }
-	//};
 };
 

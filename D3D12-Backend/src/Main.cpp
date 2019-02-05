@@ -71,9 +71,9 @@ void updateDelta()
 };
 
 // TOTAL_TRIS pretty much decides how many drawcalls in a brute force approach.
-constexpr int TOTAL_TRIS = 200;
+constexpr int TOTAL_TRIS = 100;
 // this has to do with how the triangles are spread in the screen, not important.
-constexpr int TOTAL_PLACES = 1 * TOTAL_TRIS;
+constexpr int TOTAL_PLACES = 2 * TOTAL_TRIS;
 float xt[TOTAL_PLACES], yt[TOTAL_PLACES];
 
 // lissajous points
@@ -118,19 +118,19 @@ void updateScene()
 	*/
 	{
 		static long long shift = 0;
-		const int size = scene.size();
-		for (int i = 0; i < size; i++)
+		size_t size = scene.size();
+		for (size_t i = 0; i < size; i++)
 		{
 			const float4 trans { 
 				xt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
 				yt[(int)(float)(i + shift) % (TOTAL_PLACES)], 
-				i * (-1.0 / TOTAL_PLACES),
-				0.0
+				i * (-1.0f / TOTAL_PLACES),
+				0.0f
 			};
 			scene[i]->txBuffer->setData(&trans, sizeof(trans), scene[i]->technique->getMaterial(), TRANSLATION);
 		}
 		// just to make them move...
-		shift+=max(TOTAL_TRIS / 1000.0,TOTAL_TRIS / 100.0);
+		shift += static_cast<long long>(max(TOTAL_TRIS / 1000.0, TOTAL_TRIS / 100.0));
 	}
 
 	return;
