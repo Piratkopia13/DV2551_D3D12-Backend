@@ -43,18 +43,6 @@ DX12Material::~DX12Material() {
 	for (auto cb : m_constantBuffers) {
 		delete cb.second;
 	}
-	// delete attached constant buffers
-	//for (auto buffer : constantBuffers) {
-	//	if (buffer.second != nullptr) {
-	//		delete(buffer.second);
-	//		buffer.second = nullptr;
-	//	}
-	//}
-	//// delete shader objects and program.
-	//for (auto shaderObject : shaderObjects) {
-	//	glDeleteShader(shaderObject);
-	//};
-	//glDeleteProgram(program);
 };
 
 void DX12Material::setDiffuse(Color c) {
@@ -124,11 +112,6 @@ int DX12Material::compileShader(ShaderType type) {
 	// make final vector<string> with shader source + defines + HLSL version
 	// in theory this uses move semantics (compiler does it automagically)
 	std::string shaderSource = expandShaderText(shaderText, type);
-
-	// debug
-	//OutputDebugStringA("\nShader source:\n");
-	//OutputDebugStringA(shaderSource.c_str());
-	//OutputDebugStringA("\n");
 
 	ID3DBlob* shaderBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
