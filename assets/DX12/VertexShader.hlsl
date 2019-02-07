@@ -15,13 +15,8 @@ cbuffer TRANSLATION_NAME : register(MERGE(b, TRANSLATION)) {
 	float4 translate;
 }
 
-// cbuffer DIFFUSE_TINT_NAME : register(b1) {
-// 	float4 diffuseTint;
-// }
-
 VSOut VSMain(VSIn input) {
 	VSOut output = (VSOut)0;
-	// output.position = input.position;
 	output.position = input.position + translate;
 
 	#ifdef NORMAL
