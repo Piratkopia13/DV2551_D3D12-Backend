@@ -9,16 +9,6 @@ DX12RenderState::~DX12RenderState() {
 }
 
 void DX12RenderState::set() {
-	// was wireframe mode already set?
-	/*if (*m_globalWireFrame == m_wireframe)
-		return;
-	else
-		*m_globalWireFrame = m_wireframe;*/
-
-	//if (m_wireframe)
-	//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // change to wireframe
-	//else
-	//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);	// change to solid
 }
 
 /*
