@@ -205,5 +205,4 @@ int DX12Material::enable(ID3D12GraphicsCommandList3* cmdList) {
 ;
 
 void DX12Material::disable() {
-	//glUseProgram(0);
 };

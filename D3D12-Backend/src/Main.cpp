@@ -10,9 +10,6 @@
 #include "Texture2D.h"
 #include <math.h>
 
-// TODO: REMOVE THIS INCLUDE AND ALL WaitForGPU
-#include "DX12/DX12Renderer.h"
-
 using namespace std;
 Renderer* renderer;
 
@@ -50,7 +47,6 @@ void updateDelta()
 	static double timeAccumulator = 0.f;
 
 	last = start;
-	//start = SDL_GetPerformanceCounter();
 	QueryPerformanceCounter(&lStart);
 	QueryPerformanceFrequency(&lFreq);
 	start = lStart.QuadPart;
@@ -336,16 +332,6 @@ int main(int argc, char *argv[])
 	run();
 
 	shutdown();
-
-
-#ifdef _DEBUG
-	OutputDebugStringA("== REPORT LIVE OBJECTS ==\n");
-	wComPtr<IDXGIDebug1> dxgiDebug;
-	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
-		ThrowIfFailed(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_ALL)));
-	}
-	OutputDebugStringA("=========================\n");
-#endif
 
 	return 0;
 };
