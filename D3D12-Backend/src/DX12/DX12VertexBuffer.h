@@ -25,11 +25,8 @@ public:
 
 private:
 	VertexBuffer::DATA_USAGE m_usage;
-	//cheap ref counting
-	//unsigned int refs = 0;
 
 	wComPtr<ID3D12Resource> m_vertexBuffer;
-	//D3D12_VERTEX_BUFFER_VIEW m_vbView;
 
 	// uploadBuffers to be released
 	std::vector<ID3D12Resource*> m_uploadBuffers;

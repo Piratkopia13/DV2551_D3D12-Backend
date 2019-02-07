@@ -1,7 +1,4 @@
 #include "Win32Window.h"
-//#include "Application.h"
-
-//using namespace DirectX;
 
 namespace {
 	// Used to forward messages to user defined proc function
