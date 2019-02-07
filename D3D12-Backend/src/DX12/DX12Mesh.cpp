@@ -1,8 +1,6 @@
 #include "DX12Mesh.h"
 #include "DX12VertexBuffer.h"
 
-// Mesh::DATA_USAGE is an enum { STATIC, DYNAMIC, DONTCARE };
-
 DX12Mesh::DX12Mesh() {}
 DX12Mesh::~DX12Mesh() {}
 

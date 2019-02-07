@@ -23,7 +23,5 @@ private:
 	D3D12_SAMPLER_DESC m_samplerDesc;
 	ID3D12Device4* m_device;
 
-	//GLuint magFilter, minFilter, wrapS, wrapT;
-	//GLuint samplerHandler = 0;
 };
 
